@@ -1,5 +1,6 @@
 tests_src = [
     'main.c',
+    'message.c',
     'serial_frame.c'
     ]
 

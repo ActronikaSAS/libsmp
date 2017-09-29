@@ -6,6 +6,12 @@
 #ifndef LIBSMP_PRIVATE_H
 #define LIBSMP_PRIVATE_H
 
+#define return_if_fail(expr) \
+    do { \
+        if (!(expr)) \
+            return; \
+    } while (0);
+
 #define return_val_if_fail(expr, val) \
     do { \
         if (!(expr)) \

@@ -26,6 +26,7 @@ add_project_arguments([
 
 
 libsmp_src = [
+    'src/message.c',
     'src/serial_frame.c',
     ]
 

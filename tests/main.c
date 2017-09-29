@@ -20,6 +20,10 @@ int main(int argc, char *argv[])
     if (ret != CUE_SUCCESS)
         return ret;
 
+    ret = message_test_register();
+    if (ret != CUE_SUCCESS)
+        return ret;
+
     /* Run tests using Basic interface */
     CU_basic_run_tests();
 
