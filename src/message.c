@@ -265,7 +265,7 @@ int smp_message_get(SmpMessage *msg, int index, ...)
         if (index >= SMP_MESSAGE_MAX_VALUES)
             return -ENOENT;
 
-        type = va_arg(ap, SmpType);
+        type = va_arg(ap, int);
         if (type != msg->values[index].type)
             return -EBADF;
 
@@ -401,7 +401,7 @@ int smp_message_set(SmpMessage *msg, int index, ...)
     do {
         SmpValue val;
 
-        val.type = va_arg(ap, SmpType);
+        val.type = va_arg(ap, int);
 
         switch (val.type) {
             case SMP_TYPE_UINT8:
