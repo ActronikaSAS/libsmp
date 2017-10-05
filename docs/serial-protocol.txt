@@ -1,0 +1,49 @@
+Serial protocol description
+
+To transfer frame on the serial line, a framing protocol is used.
+
+Frame description:
+
+    |                    FRAME                   |
+    ----------------------------------------------
+    | START_BYTE | PAYLOAD | CHECKSUM | END_BYTE |
+    ----------------------------------------------
+    0            1         N+1        N+2        N+3
+
+    - START_BYTE: 1 byte : frame start byte used to determine start of frame.
+    - PAYLOAD: 0 or more bytes : the frame payload. Reserved bytes (START_BYTE,
+        END_BYTE and ESC_BYTE) are escaped using ESC_BYTE.
+    - CHECKSUM: 1 byte : checksum of PAYLOAD, non-escaped, using algorithm
+        described in 'Checksum computation' section
+    - END_BYTE: 1 byte : frame end byte used to close the frame.
+
+
+Special Byte description:
+
+    - START_BYTE: 0x10
+    - END_BYTE: 0xFF
+    - ESC_BYTE: 0x1B
+
+
+Checksum computation:
+
+    checksum = 0;
+    for (i = 0; i < payload_size; i++) {
+        checksum ^= payload[i]
+    }
+
+
+Example:
+
+                      |              PAYLOAD             |
+                      ------------------------------------
+                      | 0x33 | 0x1a | 0xfe | 0x10 | 0xc0 |
+
+                                       ||
+                                       \/
+
+    |                                 FRAME                                      |
+    ------------------------------------------------------------------------------
+    | START_BYTE |                   PAYLOAD               | CHECKSUM | END_BYTE |
+    ------------------------------------------------------------------------------
+    |    0x10    | 0x33 | 0x1a | 0xfe | 0x1b | 0x10 | 0xc0 |   0x07   |   0xff   |

@@ -1,0 +1,74 @@
+Message protocol description
+
+Message description:
+
+    |     MESSAGE      |
+    --------------------
+    | HEADER | PAYLOAD |
+    --------------------
+    0        8         N+8
+
+
+    - HEADER: 8 bytes : the message header, see description below
+    - PAYLOAD: N (0 or more) bytes : the message payload
+
+
+Header description:
+
+    |  HEADER   |
+    -------------
+    | ID | SIZE |
+    -------------
+    0    4      8
+
+    - ID: 4 bytes: the message id. Little-endian encoded.
+    - SIZE: 4 bytes: the payload size. Little-endian encoded.
+
+
+Payload desciption:
+
+    The payload is a sequence of arguments without any padding between them.
+    Size of arguments depends on argument type. If the message has no arguments
+    there is no payload in it.
+
+    |         PAYLOAD          |
+    ----------------------------
+    | ARG1 | ARG2 | ... | ARGN |
+    ----------------------------
+    0                          N
+
+
+Argument description:
+
+    |     ARG     |
+    ---------------
+    | TYPE | DATA |
+    ---------------
+    0      1      1+N
+
+    TYPE: The type of the arguments which can be:
+        * 0x01: U8:  8-bits unsigned integer, size: 1 byte
+        * 0x02: I8:  8-bits signed integer, size: 1 byte
+        * 0x03: U16: 16-bits unsigned integer, little-endian, size: 2 byte
+        * 0x04: I16: 16-bits signed integer, little-endian, size: 2 byte
+        * 0x05: U32: 32-bits unsigned integer, little-endian, size: 4 byte
+        * 0x06: I32: 32-bits signed integer, little-endian, size: 4 byte
+        * 0x07: U64: 64-bits unsigned integer, little-endian, size: 8 byte
+        * 0x08: I64: 64-bits signed integer, little-endian, size: 8 byte
+        * 0x09: STR: C string nul-terminated.
+
+    DATA: N bytes: encoded argument
+
+
+String argument description:
+
+    |            STR             |
+    ------------------------------
+    | 0x09 | SIZE | STR[] | 0x00 |
+    ------------------------------
+    0      1      3       3+N    4+N
+
+    0x09: 1 byte: String type
+    SIZE: 2 byte: string size including nul-character, little-endian encoded
+    STR[]: N bytes: string data
+    0x00: nul character
