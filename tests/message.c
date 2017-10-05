@@ -27,8 +27,10 @@ static void setup_test_message_get(SmpMessage *msg)
     msg->values[6].value.u64 = 423535346;
     msg->values[7].type = SMP_TYPE_INT64;
     msg->values[7].value.i64 = -453126;
-    msg->values[8].type = SMP_TYPE_UINT8;
-    msg->values[8].value.i64 = 0;
+    msg->values[8].type = SMP_TYPE_STRING;
+    msg->values[8].value.cstring = "Hello world !";
+    msg->values[9].type = SMP_TYPE_UINT8;
+    msg->values[9].value.i64 = 0;
 }
 
 static void test_smp_message_get(void)
@@ -43,6 +45,7 @@ static void test_smp_message_get(void)
     int32_t i32;
     uint64_t u64;
     int64_t i64;
+    const char *str;
 
     setup_test_message_get(&msg);
 
@@ -78,6 +81,7 @@ static void test_smp_message_get(void)
             5, SMP_TYPE_INT32, &i32,
             6, SMP_TYPE_UINT64, &u64,
             7, SMP_TYPE_INT64, &i64,
+            8, SMP_TYPE_STRING, &str,
             -1);
     CU_ASSERT_EQUAL(ret, 0);
     CU_ASSERT_EQUAL(u8, 33);
@@ -88,6 +92,7 @@ static void test_smp_message_get(void)
     CU_ASSERT_EQUAL(i32, -233214);
     CU_ASSERT_EQUAL(u64, 423535346);
     CU_ASSERT_EQUAL(i64, -453126);
+    CU_ASSERT_STRING_EQUAL(str, "Hello world !");
 
     smp_message_clear(&msg);
 }
@@ -157,6 +162,12 @@ static void test_smp_message_get_value(void)
     CU_ASSERT_EQUAL(ret, 0);
     CU_ASSERT_EQUAL(value.type, SMP_TYPE_INT64);
     CU_ASSERT_EQUAL(value.value.i64, -453126);
+
+    memset(&value, 0, sizeof(value));
+    ret = smp_message_get_value(&msg, 8, &value);
+    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL(value.type, SMP_TYPE_STRING);
+    CU_ASSERT_EQUAL(value.value.cstring, "Hello world !");
 }
 
 #define DEFINE_GET_TYPE_TEST_FUNC(type, index, expected_value) \
@@ -194,6 +205,32 @@ DEFINE_GET_TYPE_TEST_FUNC(uint32, 4, 4355435);
 DEFINE_GET_TYPE_TEST_FUNC(int32, 5, -233214);
 DEFINE_GET_TYPE_TEST_FUNC(uint64, 6, 423535346);
 DEFINE_GET_TYPE_TEST_FUNC(int64, 7, -453126);
+
+static void test_smp_message_get_cstring(void)
+{
+    SmpMessage msg;
+    int ret;
+    const char *str;
+
+    setup_test_message_get(&msg);
+
+    /* out of bound index should fail */
+    ret = smp_message_get_cstring(&msg, SMP_MESSAGE_MAX_VALUES + 10, &str);
+    CU_ASSERT_EQUAL(ret, -ENOENT);
+
+    /* fail if value is not initialized, ie NONE */
+    ret = smp_message_get_cstring(&msg, SMP_MESSAGE_MAX_VALUES - 1, &str);
+    CU_ASSERT_EQUAL(ret, -EBADF);
+
+    /* fail if we have the wrong type */
+    ret = smp_message_get_cstring(&msg, 0, &str);
+    CU_ASSERT_EQUAL(ret, -EBADF);
+
+    /* good */
+    ret = smp_message_get_cstring(&msg, 8, &str);
+    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_STRING_EQUAL(str, "Hello world !");
+}
 
 static void test_smp_message_set(void)
 {
@@ -250,6 +287,7 @@ static void test_smp_message_set(void)
             5, SMP_TYPE_INT32, (int32_t) -250002,
             6, SMP_TYPE_UINT64, (uint64_t) 1 << 55,
             7, SMP_TYPE_INT64, -((int64_t) 1 << 33),
+            8, SMP_TYPE_STRING, "Working",
             -1);
     CU_ASSERT_EQUAL(ret, 0);
     CU_ASSERT_EQUAL(msg.values[0].type, SMP_TYPE_UINT8);
@@ -268,6 +306,8 @@ static void test_smp_message_set(void)
     CU_ASSERT_EQUAL(msg.values[6].value.u64, (uint64_t) 1 << 55);
     CU_ASSERT_EQUAL(msg.values[7].type, SMP_TYPE_INT64);
     CU_ASSERT_EQUAL(msg.values[7].value.i64, -((int64_t) 1 << 33));
+    CU_ASSERT_EQUAL(msg.values[8].type, SMP_TYPE_STRING);
+    CU_ASSERT_STRING_EQUAL(msg.values[8].value.cstring, "Working");
     smp_message_clear(&msg);
 }
 
@@ -331,11 +371,32 @@ DEFINE_SET_TYPE_TEST_FUNC(int32, SMP_TYPE_INT32, i32, -233214);
 DEFINE_SET_TYPE_TEST_FUNC(uint64, SMP_TYPE_UINT64, u64, 423535346);
 DEFINE_SET_TYPE_TEST_FUNC(int64, SMP_TYPE_INT64, i64, -453126);
 
+static void test_smp_message_set_cstring(void)
+{
+    SmpMessage msg;
+    int ret;
+
+    /* out of bound index should fail */
+    smp_message_init(&msg, 33);
+    ret = smp_message_set_cstring(&msg, SMP_MESSAGE_MAX_VALUES + 10, "foo");
+    CU_ASSERT_EQUAL(ret, -ENOENT);
+    smp_message_clear(&msg);
+
+    /* good */
+    smp_message_init(&msg, 33);
+    ret = smp_message_set_cstring(&msg, 0, "foobar");
+    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL(msg.values[0].type, SMP_TYPE_STRING);
+    CU_ASSERT_STRING_EQUAL(msg.values[0].value.cstring, "foobar");
+    smp_message_clear(&msg);
+}
+
 static void test_smp_message_encode(void)
 {
     SmpMessage msg;
     uint8_t buffer[1024];
     int ret;
+    const char *str = "Little string to check string works";
 
     smp_message_init(&msg, 42);
     smp_message_set(&msg,
@@ -347,6 +408,7 @@ static void test_smp_message_encode(void)
             5, SMP_TYPE_INT32, (int32_t) -250002,
             6, SMP_TYPE_UINT64, (uint64_t) 1 << 55,
             7, SMP_TYPE_INT64, -((int64_t) 1 << 33),
+            8, SMP_TYPE_STRING, str,
             -1);
 
     /* encoding in a too small buffer should fail */
@@ -355,10 +417,10 @@ static void test_smp_message_encode(void)
 
     /* This should work and we should get the following payload */
     ret = smp_message_encode(&msg, buffer, sizeof(buffer));
-    CU_ASSERT_EQUAL(ret, 46);
+    CU_ASSERT_EQUAL(ret, 46 + 4 + strlen(str));
 
     CU_ASSERT_EQUAL(*((uint32_t *)buffer), 42);
-    CU_ASSERT_EQUAL(*((uint32_t *)(buffer + 4)), 38);
+    CU_ASSERT_EQUAL(*((uint32_t *)(buffer + 4)), 38 + 4 + strlen(str));
     CU_ASSERT_EQUAL(*(buffer + 8), SMP_TYPE_UINT8);
     CU_ASSERT_EQUAL(*(buffer + 9), 33);
     CU_ASSERT_EQUAL(*(buffer + 10), SMP_TYPE_INT8);
@@ -375,6 +437,10 @@ static void test_smp_message_encode(void)
     CU_ASSERT_EQUAL(*((uint64_t *)(buffer + 29)), (uint64_t) 1 << 55);
     CU_ASSERT_EQUAL(*(buffer + 37), SMP_TYPE_INT64);
     CU_ASSERT_EQUAL(*((int64_t *)(buffer + 38)), -((int64_t) 1 << 33));
+    CU_ASSERT_EQUAL(*(buffer + 46), SMP_TYPE_STRING);
+    CU_ASSERT_EQUAL(*((uint16_t *)(buffer + 47)), strlen(str) + 1);
+    CU_ASSERT_STRING_EQUAL(buffer + 49, str);
+    CU_ASSERT_EQUAL(*(buffer + 49 + strlen(str)), '\0');
 
     smp_message_clear(&msg);
 }
@@ -398,7 +464,7 @@ static void test_smp_message_init_from_buffer(void)
 
     uint8_t buffer[] = {
         0x03, 0x33, 0x24, 0x02,       /* message id */
-        0x26, 0x00, 0x00, 0x00,       /* argument size */
+        0x2f, 0x00, 0x00, 0x00,       /* argument size */
         0x05, 0x24, 0x03, 0x00, 0x00, /* uint32_t = 804 */
         0x03, 0x3a, 0x00,             /* uint16_t = 58 */
         0x02, 0xf1,                   /* int8_t = -15 */
@@ -411,6 +477,9 @@ static void test_smp_message_init_from_buffer(void)
         /* int64_t */
         0x08, i64.bytes[0], i64.bytes[1], i64.bytes[2], i64.bytes[3],
         i64.bytes[4], i64.bytes[5], i64.bytes[6], i64.bytes[7],
+
+        /* str : "hello" */
+        0x09, 0x06, 0x00, 'h', 'e', 'l', 'l', 'o', '\0',
 
         0x04, 0x2a, 0x80,             /* int16_t = -32726 */
         0x06, 0x2a, 0x80, 0xff, 0xff  /* int32_t = -32726 */
@@ -443,10 +512,12 @@ static void test_smp_message_init_from_buffer(void)
     CU_ASSERT_EQUAL(msg.values[4].value.u64, u64.u64);
     CU_ASSERT_EQUAL(msg.values[5].type, SMP_TYPE_INT64);
     CU_ASSERT_EQUAL(msg.values[5].value.i64, i64.i64);
-    CU_ASSERT_EQUAL(msg.values[6].type, SMP_TYPE_INT16);
-    CU_ASSERT_EQUAL(msg.values[6].value.i16, -32726);
-    CU_ASSERT_EQUAL(msg.values[7].type, SMP_TYPE_INT32);
-    CU_ASSERT_EQUAL(msg.values[7].value.i32, -32726);
+    CU_ASSERT_EQUAL(msg.values[6].type, SMP_TYPE_STRING);
+    CU_ASSERT_STRING_EQUAL(msg.values[6].value.cstring, "hello");
+    CU_ASSERT_EQUAL(msg.values[7].type, SMP_TYPE_INT16);
+    CU_ASSERT_EQUAL(msg.values[7].value.i16, -32726);
+    CU_ASSERT_EQUAL(msg.values[8].type, SMP_TYPE_INT32);
+    CU_ASSERT_EQUAL(msg.values[8].value.i32, -32726);
 
     smp_message_clear(&msg);
 
@@ -474,6 +545,34 @@ static void test_smp_message_init_from_buffer(void)
         CU_ASSERT_EQUAL(ret, -E2BIG);
         smp_message_clear(&msg);
     }
+
+    /* a buffer with a bad string size should fail */
+    {
+        uint8_t buffer2[] = {
+            0x03, 0x33, 0x24, 0x02, /* message id */
+            0x09, 0x00, 0x00, 0x00, /* argument size */
+
+            /* str : "hello" */
+            0x09, 0x44, 0x00, 'h', 'e', 'l', 'l', 'o', '\0',
+        };
+
+        ret = smp_message_init_from_buffer(&msg, buffer2, sizeof(buffer2));
+        CU_ASSERT_EQUAL(ret, -EBADMSG);
+    }
+
+    /* a buffer with a non nul-terminated string should fail */
+    {
+        uint8_t buffer2[] = {
+            0x03, 0x33, 0x24, 0x02, /* message id */
+            0x09, 0x00, 0x00, 0x00, /* argument size */
+
+            /* str : "hello" */
+            0x09, 0x06, 0x00, 'h', 'e', 'l', 'l', 'o', 0x45,
+        };
+
+        ret = smp_message_init_from_buffer(&msg, buffer2, sizeof(buffer2));
+        CU_ASSERT_EQUAL(ret, -EBADMSG);
+    }
 }
 
 typedef struct
@@ -493,6 +592,7 @@ static Test tests[] = {
     { "test_smp_message_get_int32", test_smp_message_get_int32 },
     { "test_smp_message_get_uint64", test_smp_message_get_uint64 },
     { "test_smp_message_get_int64", test_smp_message_get_int64 },
+    { "test_smp_message_get_cstring", test_smp_message_get_cstring },
     { "test_smp_message_set", test_smp_message_set },
     { "test_smp_message_set_value", test_smp_message_set_value },
     { "test_smp_message_set_uint8", test_smp_message_set_uint8 },
@@ -503,6 +603,7 @@ static Test tests[] = {
     { "test_smp_message_set_int32", test_smp_message_set_int32 },
     { "test_smp_message_set_uint64", test_smp_message_set_uint64 },
     { "test_smp_message_set_int64", test_smp_message_set_int64 },
+    { "test_smp_message_set_cstring", test_smp_message_set_cstring },
     { "test_smp_message_encode", test_smp_message_encode },
     { "test_smp_message_init_from_buffer", test_smp_message_init_from_buffer },
     { NULL, NULL }

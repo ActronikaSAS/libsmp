@@ -37,6 +37,7 @@ DEFINE_WRITE_FUNC(uint32);
 DEFINE_WRITE_FUNC(int64);
 DEFINE_WRITE_FUNC(uint64);
 
+/* warning: for string type, it returns the mininum payload size */
 static size_t smp_type_size(SmpType type)
 {
     switch (type) {
@@ -52,11 +53,52 @@ static size_t smp_type_size(SmpType type)
         case SMP_TYPE_INT64:
         case SMP_TYPE_UINT64:
             return 8;
+        case SMP_TYPE_STRING:
+            return 3;
         default:
             break;
     }
 
     return 0;
+}
+
+static size_t smp_value_compute_size(const SmpValue *value)
+{
+    size_t size;
+
+    if (value->type == SMP_TYPE_STRING) {
+        /* size + nul byte */
+        size = 3;
+
+        if (value->value.cstring != NULL) {
+            size += strlen(value->value.cstring);
+        }
+    } else {
+        /* scalar types have known size */
+        size = smp_type_size(value->type);
+    }
+
+    return size;
+}
+
+static const char *smp_message_decode_string(const uint8_t *buffer, size_t size)
+{
+    size_t strsize;
+
+    if (size < 3)
+        return NULL;
+
+    strsize = smp_read_uint16(buffer);
+
+    if (size < 3 + strsize)
+        return NULL;
+
+    /* make sure there is a nul byte at the end, note that strsize includes
+     * the nul byte */
+    if (buffer[2 + strsize - 1] != '\0')
+        return NULL;
+
+    return ((const char *) buffer) + 2;
 }
 
 static ssize_t smp_message_decode_value(SmpValue *value, const uint8_t *buffer,
@@ -101,6 +143,12 @@ static ssize_t smp_message_decode_value(SmpValue *value, const uint8_t *buffer,
         case SMP_TYPE_INT64:
             value->value.i64 = smp_read_int64(buffer);
             break;
+        case SMP_TYPE_STRING:
+            value->value.cstring = smp_message_decode_string(buffer, size);
+
+            /* recalculate argsize with string size */
+            argsize = 1 + smp_value_compute_size(value);
+            break;
         default:
             return -EBADMSG;
     }
@@ -139,11 +187,24 @@ static ssize_t smp_message_encode_value(const SmpValue *value, uint8_t *buffer)
             case SMP_TYPE_INT64:
                 smp_write_int64(buffer, value->value.i64);
                 break;
+            case SMP_TYPE_STRING: {
+                int len = strlen(value->value.cstring);
+                if (len + 1 > UINT16_MAX) {
+                    /* string too long */
+                    return 0;
+                }
+
+                /* size | data | nul byte */
+                smp_write_uint16(buffer, len + 1);
+                memcpy(buffer + 2, value->value.cstring, len);
+                buffer[2 + len] = '\0';
+                break;
+            }
             default:
                 return 0;
     }
 
-    return smp_type_size(value->type) + 1;
+    return smp_value_compute_size(value) + 1;
 }
 
 static size_t smp_message_compute_max_encoded_size(SmpMessage *msg)
@@ -152,7 +213,7 @@ static size_t smp_message_compute_max_encoded_size(SmpMessage *msg)
     int i;
 
     for (i = 0; i < SMP_MESSAGE_MAX_VALUES; i++)
-        ret += smp_type_size(msg->values[i].type);
+        ret += smp_value_compute_size(&msg->values[i]);
 
     return ret;
 }
@@ -321,6 +382,14 @@ int smp_message_get(SmpMessage *msg, int index, ...)
                 *ptr = msg->values[index].value.i64;
                 break;
             }
+
+            case SMP_TYPE_STRING: {
+                const char **ptr = va_arg(ap, const char **);
+
+                *ptr = msg->values[index].value.cstring;
+                break;
+            }
+
             default:
                 return -EBADF;
         }
@@ -388,6 +457,11 @@ int smp_message_get_int64(SmpMessage *msg, int index, int64_t *value)
     return smp_message_get(msg, index, SMP_TYPE_INT64, value, -1);
 }
 
+int smp_message_get_cstring(SmpMessage *msg, int index, const char **value)
+{
+    return smp_message_get(msg, index, SMP_TYPE_STRING, value, -1);
+}
+
 int smp_message_set(SmpMessage *msg, int index, ...)
 {
     va_list ap;
@@ -427,6 +501,9 @@ int smp_message_set(SmpMessage *msg, int index, ...)
                 break;
             case SMP_TYPE_INT64:
                 val.value.i64 = va_arg(ap, int64_t);
+                break;
+            case SMP_TYPE_STRING:
+                val.value.cstring = va_arg(ap, const char *);
                 break;
             default:
                 break;
@@ -494,4 +571,9 @@ int smp_message_set_uint64(SmpMessage *msg, int index, uint64_t value)
 int smp_message_set_int64(SmpMessage *msg, int index, int64_t value)
 {
     return smp_message_set(msg, index, SMP_TYPE_INT64, value, -1);
+}
+
+int smp_message_set_cstring(SmpMessage *msg, int index, const char *value)
+{
+    return smp_message_set(msg, index, SMP_TYPE_STRING, value, -1);
 }

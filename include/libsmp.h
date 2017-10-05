@@ -29,6 +29,7 @@ typedef enum
     SMP_TYPE_INT32 = 0x06,
     SMP_TYPE_UINT64 = 0x07,
     SMP_TYPE_INT64 = 0x08,
+    SMP_TYPE_STRING = 0x09,
 
     SMP_TYPE_MAX = 0x7f
 } SmpType;
@@ -46,6 +47,8 @@ typedef struct
         int16_t i16;
         int32_t i32;
         int64_t i64;
+
+        const char *cstring;
     } value;
 } SmpValue;
 
@@ -75,6 +78,7 @@ int smp_message_get_uint32(SmpMessage *msg, int index, uint32_t *value);
 int smp_message_get_int32(SmpMessage *msg, int index, int32_t *value);
 int smp_message_get_uint64(SmpMessage *msg, int index, uint64_t *value);
 int smp_message_get_int64(SmpMessage *msg, int index, int64_t *value);
+int smp_message_get_cstring(SmpMessage *msg, int index, const char **value);
 
 int smp_message_set(SmpMessage *msg, int index, ...);
 int smp_message_set_value(SmpMessage *msg, int index, const SmpValue *value);
@@ -86,6 +90,7 @@ int smp_message_set_uint32(SmpMessage *msg, int index, uint32_t value);
 int smp_message_set_int32(SmpMessage *msg, int index, int32_t value);
 int smp_message_set_uint64(SmpMessage *msg, int index, uint64_t value);
 int smp_message_set_int64(SmpMessage *msg, int index, int64_t value);
+int smp_message_set_cstring(SmpMessage *msg, int index, const char *value);
 
 /* Serial frame API */
 
