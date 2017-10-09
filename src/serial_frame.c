@@ -122,6 +122,21 @@ static void smp_serial_frame_decoder_process_byte(SmpSerialFrameDecoder *decoder
     }
 }
 
+/* dest should be able to contain at least 2 bytes. returns the number of
+ * bytes written */
+static int smp_serial_frame_write_byte(uint8_t *dest, uint8_t byte)
+{
+    int offset = 0;
+
+    /* escape special byte */
+    if (is_magic_byte(byte))
+        dest[offset++] = ESC_BYTE;
+
+    dest[offset++] = byte;
+
+    return offset;
+}
+
 /* API */
 
 int smp_serial_frame_init(SmpSerialFrameContext *ctx, const char *device,
@@ -179,15 +194,11 @@ int smp_serial_frame_send(SmpSerialFrameContext *ctx, const uint8_t *buf, size_t
 
     /* prepare the buffer */
     txbuf[offset++] = START_BYTE;
-    for (i = 0; i < size; i++) {
-        /* escape special byte */
-        if (is_magic_byte(buf[i]))
-            txbuf[offset++] = ESC_BYTE;
+    for (i = 0; i < size; i++)
+        offset += smp_serial_frame_write_byte(txbuf + offset, buf[i]);
 
-        txbuf[offset++] = buf[i];
-    }
-
-    txbuf[offset++] = compute_checksum(buf, size);
+    offset += smp_serial_frame_write_byte(txbuf + offset,
+            compute_checksum(buf, size));
     txbuf[offset++] = END_BYTE;
 
     /* send it */

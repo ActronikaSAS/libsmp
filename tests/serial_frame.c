@@ -184,6 +184,67 @@ static void test_smp_serial_frame_send(void)
     test_teardown(&tctx);
 }
 
+static void test_smp_serial_frame_send_magic_crc(void)
+{
+    TestCtx tctx;
+    SmpSerialFrameContext ctx;
+    uint8_t payload[3][1] = {
+        /* special payload with checksum equals to magic bytes */
+        { START_BYTE },
+        { ESC_BYTE },
+        { END_BYTE },
+    };
+    uint8_t expected_frame[3][6] = {
+        {
+            START_BYTE,              /* begin frame */
+            ESC_BYTE, START_BYTE,    /* payload */
+            ESC_BYTE, START_BYTE,    /* escaped CRC */
+            END_BYTE                 /* end frame */
+        },
+        {
+            START_BYTE,              /* begin frame */
+            ESC_BYTE, ESC_BYTE,      /* payload */
+            ESC_BYTE, ESC_BYTE,      /* escaped CRC */
+            END_BYTE                 /* end frame */
+        },
+        {
+            START_BYTE,              /* begin frame */
+            ESC_BYTE, END_BYTE,      /* payload */
+            ESC_BYTE, END_BYTE,      /* escaped CRC */
+            END_BYTE                 /* end frame */
+        },
+
+    };
+    int i;
+    int ret;
+
+    test_setup(&tctx);
+    ret = smp_serial_frame_init(&ctx, FIFO_PATH, &simple_cbs, NULL);
+    CU_ASSERT_EQUAL_FATAL(ret, 0);
+
+    for (i = 0; i < 3; i++) {
+        uint8_t rbuf[64];
+        ssize_t rbytes;
+        ssize_t j;
+
+        ret = smp_serial_frame_send(&ctx, payload[i], sizeof(payload[i]));
+        CU_ASSERT_EQUAL(ret, 0);
+
+        rbytes = read(tctx.fd, rbuf, sizeof(rbuf));
+        CU_ASSERT_EQUAL(rbytes, sizeof(expected_frame[i]));
+
+        for (j = 0; j < rbytes; j++) {
+            if (rbuf[j] != expected_frame[i][j]) {
+                CU_FAIL("frame mismatch");
+                break;
+            }
+        }
+    }
+
+    smp_serial_frame_deinit(&ctx);
+    test_teardown(&tctx);
+}
+
 typedef enum
 {
     NONE,
@@ -192,6 +253,7 @@ typedef enum
     BAD_CRC,
     FRAME_TOO_BIG,
     FRAME_TOO_BIG_ESC,
+    CRC_ESCAPED,
 } TestSerialFrameRecvTestCase;
 
 static uint8_t test_smp_serial_frame_recv_payload1[] = {
@@ -217,6 +279,13 @@ test_smp_serial_frame_recv_too_big_esc[SMP_SERIAL_FRAME_MAX_FRAME_SIZE + 10] = {
     START_BYTE, 0x00,
 };
 
+static uint8_t
+test_smp_serial_frame_recv_crc_escaped[] = {
+    START_BYTE, ESC_BYTE, START_BYTE, ESC_BYTE, START_BYTE, END_BYTE,
+    START_BYTE, ESC_BYTE, END_BYTE, ESC_BYTE, END_BYTE, END_BYTE,
+    START_BYTE, ESC_BYTE, ESC_BYTE, ESC_BYTE, ESC_BYTE, END_BYTE,
+};
+
 /* make it static to check address in callback */
 static TestSerialFrameRecvTestCase test_smp_serial_frame_recv_test_case;
 
@@ -229,7 +298,7 @@ static void test_smp_serial_frame_recv_new_frame(uint8_t *frame, size_t size,
 
     CU_ASSERT_EQUAL(userdata, &test_smp_serial_frame_recv_test_case);
 
-    test_smp_serial_frame_recv_new_frame_called = 1;
+    test_smp_serial_frame_recv_new_frame_called++;
 
     switch (test_smp_serial_frame_recv_test_case) {
         case PAYLOAD_WITH_MAGIC_BYTES:
@@ -249,7 +318,22 @@ static void test_smp_serial_frame_recv_new_frame(uint8_t *frame, size_t size,
             CU_ASSERT_EQUAL(frame[1], 0x33);
             CU_ASSERT_EQUAL(frame[2], 0x32);
             break;
-
+        case CRC_ESCAPED:
+            CU_ASSERT_EQUAL(size, 1);
+            switch (test_smp_serial_frame_recv_new_frame_called) {
+                case 1:
+                    CU_ASSERT_EQUAL(frame[0], START_BYTE);
+                    break;
+                case 2:
+                    CU_ASSERT_EQUAL(frame[0], END_BYTE);
+                    break;
+                case 3:
+                    CU_ASSERT_EQUAL(frame[0], ESC_BYTE);
+                    break;
+                default:
+                    break;
+            }
+            break;
         default:
             break;
     }
@@ -273,6 +357,16 @@ static void test_smp_serial_frame_recv_error(SmpSerialFrameError error, void *us
         default:
             break;
     }
+}
+
+static void test_smp_serial_frame_terminate_frame(TestCtx *tctx,
+        SmpSerialFrameContext *ctx)
+{
+    uint8_t byte = END_BYTE;
+
+    test_smp_serial_frame_recv_test_case = NONE;
+    write(tctx->fd, &byte, 1);
+    smp_serial_frame_process_recv_fd(ctx);
 }
 
 static void test_smp_serial_frame_recv(void)
@@ -344,13 +438,7 @@ static void test_smp_serial_frame_recv(void)
     CU_ASSERT_TRUE(test_smp_serial_frame_recv_error_called);
 
     /* send an END_BYTE to terminate previous test frame */
-    {
-        uint8_t byte = END_BYTE;
-
-        test_smp_serial_frame_recv_test_case = NONE;
-        write(tctx.fd, &byte, 1);
-        smp_serial_frame_process_recv_fd(&ctx);
-    }
+    test_smp_serial_frame_terminate_frame(&tctx, &ctx);
 
     /* frame too big with escape char at the end */
     test_smp_serial_frame_recv_too_big_esc[SMP_SERIAL_FRAME_MAX_FRAME_SIZE] =
@@ -367,6 +455,21 @@ static void test_smp_serial_frame_recv(void)
     CU_ASSERT_FALSE(test_smp_serial_frame_recv_new_frame_called);
     CU_ASSERT_TRUE(test_smp_serial_frame_recv_error_called);
 
+    /* send an END_BYTE to terminate any previous test frame */
+    test_smp_serial_frame_terminate_frame(&tctx, &ctx);
+
+    ret = write(tctx.fd, test_smp_serial_frame_recv_crc_escaped,
+            sizeof(test_smp_serial_frame_recv_crc_escaped));
+    CU_ASSERT_EQUAL_FATAL(ret, sizeof(test_smp_serial_frame_recv_crc_escaped));
+
+    test_smp_serial_frame_recv_new_frame_called = 0;
+    test_smp_serial_frame_recv_error_called = 0;
+    test_smp_serial_frame_recv_test_case = CRC_ESCAPED;
+    ret = smp_serial_frame_process_recv_fd(&ctx);
+    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL(test_smp_serial_frame_recv_new_frame_called, 3);
+    CU_ASSERT_FALSE(test_smp_serial_frame_recv_error_called);
+
     smp_serial_frame_deinit(&ctx);
     test_teardown(&tctx);
 }
@@ -381,6 +484,8 @@ static Test tests[] = {
     { "test_smp_serial_frame_init", test_smp_serial_frame_init },
     { "test_smp_serial_frame_send_simple", test_smp_serial_frame_send_simple },
     { "test_smp_serial_frame_send", test_smp_serial_frame_send },
+    { "test_smp_serial_frame_send_magic_crc",
+        test_smp_serial_frame_send_magic_crc },
     { "test_smp_serial_frame_recv", test_smp_serial_frame_recv },
     { NULL, NULL }
 };
