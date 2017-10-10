@@ -254,6 +254,7 @@ typedef enum
     FRAME_TOO_BIG,
     FRAME_TOO_BIG_ESC,
     CRC_ESCAPED,
+    FRAMES_AND_GARBAGE,
 } TestSerialFrameRecvTestCase;
 
 static uint8_t test_smp_serial_frame_recv_payload1[] = {
@@ -284,6 +285,20 @@ test_smp_serial_frame_recv_crc_escaped[] = {
     START_BYTE, ESC_BYTE, START_BYTE, ESC_BYTE, START_BYTE, END_BYTE,
     START_BYTE, ESC_BYTE, END_BYTE, ESC_BYTE, END_BYTE, END_BYTE,
     START_BYTE, ESC_BYTE, ESC_BYTE, ESC_BYTE, ESC_BYTE, END_BYTE,
+};
+
+static uint8_t test_smp_serial_frame_recv_frames_and_garbage[] = {
+    /* some garbage first */
+    0x33, 0x22, 0x01, 0x0a, END_BYTE, ESC_BYTE,
+
+    /* now the first frame */
+    START_BYTE, 0x12, 0x4e, 0x1f, 0xb0, 0x00, 0x33, 0xc0, END_BYTE,
+
+    /* now some garbage */
+    0x19, 0xaf, 0x43, 0x92, 0x09,
+
+    /* the second frame */
+    START_BYTE, 0x12, 0x4e, 0x1f, 0xb0, 0x00, 0x33, 0xc0, END_BYTE
 };
 
 /* make it static to check address in callback */
@@ -331,6 +346,22 @@ static void test_smp_serial_frame_recv_new_frame(uint8_t *frame, size_t size,
                     CU_ASSERT_EQUAL(frame[0], ESC_BYTE);
                     break;
                 default:
+                    break;
+            }
+            break;
+        case FRAMES_AND_GARBAGE:
+            switch (test_smp_serial_frame_recv_new_frame_called) {
+                case 1:
+                case 2:
+                     CU_ASSERT_EQUAL(frame[0], 0x12);
+                     CU_ASSERT_EQUAL(frame[1], 0x4e);
+                     CU_ASSERT_EQUAL(frame[2], 0x1f);
+                     CU_ASSERT_EQUAL(frame[3], 0xb0);
+                     CU_ASSERT_EQUAL(frame[4], 0x00);
+                     CU_ASSERT_EQUAL(frame[5], 0x33);
+                    break;
+                default:
+                    CU_FAIL("not reached");
                     break;
             }
             break;
@@ -468,6 +499,20 @@ static void test_smp_serial_frame_recv(void)
     ret = smp_serial_frame_process_recv_fd(&ctx);
     CU_ASSERT_EQUAL(ret, 0);
     CU_ASSERT_EQUAL(test_smp_serial_frame_recv_new_frame_called, 3);
+    CU_ASSERT_FALSE(test_smp_serial_frame_recv_error_called);
+
+    /* frame and garbage */
+    ret = write(tctx.fd, test_smp_serial_frame_recv_frames_and_garbage,
+            sizeof(test_smp_serial_frame_recv_frames_and_garbage));
+    CU_ASSERT_EQUAL_FATAL(ret,
+            sizeof(test_smp_serial_frame_recv_frames_and_garbage));
+
+    test_smp_serial_frame_recv_new_frame_called = 0;
+    test_smp_serial_frame_recv_error_called = 0;
+    test_smp_serial_frame_recv_test_case = FRAMES_AND_GARBAGE;
+    ret = smp_serial_frame_process_recv_fd(&ctx);
+    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL(test_smp_serial_frame_recv_new_frame_called, 2);
     CU_ASSERT_FALSE(test_smp_serial_frame_recv_error_called);
 
     smp_serial_frame_deinit(&ctx);
