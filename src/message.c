@@ -311,6 +311,20 @@ uint32_t smp_message_get_msgid(SmpMessage *msg)
     return msg->msgid;
 }
 
+int smp_message_n_args(SmpMessage *msg)
+{
+    int i;
+
+    return_val_if_fail(msg != NULL, -1);
+
+    for (i = 0; i < SMP_MESSAGE_MAX_VALUES; i++) {
+        if (msg->values[i].type == SMP_TYPE_NONE)
+            break;
+    }
+
+    return i;
+}
+
 int smp_message_get(SmpMessage *msg, int index, ...)
 {
     va_list ap;

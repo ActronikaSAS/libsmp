@@ -67,6 +67,7 @@ void smp_message_clear(SmpMessage *msg);
 ssize_t smp_message_encode(SmpMessage *msg, uint8_t *buffer, size_t size);
 
 uint32_t smp_message_get_msgid(SmpMessage *msg);
+int smp_message_n_args(SmpMessage *msg);
 
 int smp_message_get(SmpMessage *msg, int index, ...);
 int smp_message_get_value(SmpMessage *msg, int index, SmpValue *value);
