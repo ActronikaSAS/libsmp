@@ -2,6 +2,9 @@
  * Copyright (C) 2017 Actronika SAS
  *     Author: Aurélien Zanelli <aurelien.zanelli@actronika.com>
  */
+/**
+ * @file
+ */
 
 #ifndef LIBSMP_H
 #define LIBSMP_H
@@ -16,8 +19,13 @@ extern "C" {
 
 /* Message */
 
+/** The maximum numbers of arguments in a message */
 #define SMP_MESSAGE_MAX_VALUES 16
 
+/**
+ * \ingroup message
+ * Type of an argument
+ */
 typedef enum
 {
     SMP_TYPE_NONE = 0x00,
@@ -34,6 +42,10 @@ typedef enum
     SMP_TYPE_MAX = 0x7f
 } SmpType;
 
+/**
+ * \ingroup message
+ * Structure describing an argument in the message
+ */
 typedef struct
 {
     SmpType type;
@@ -52,8 +64,13 @@ typedef struct
     } value;
 } SmpValue;
 
+/**
+ * \ingroup message
+ * Message structure
+ */
 typedef struct
 {
+    /** The message id */
     uint32_t msgid;
 
     SmpValue values[SMP_MESSAGE_MAX_VALUES];
@@ -95,12 +112,23 @@ int smp_message_set_cstring(SmpMessage *msg, int index, const char *value);
 
 /* Serial frame API */
 
+/**
+ * \ingroup serial_frame
+ * The maximum frame size in bytes.
+ */
 #define SMP_SERIAL_FRAME_MAX_FRAME_SIZE 1024
 
+/**
+ * \ingroup serial_frame
+ * Error thrown during decoding
+ */
 typedef enum
 {
+    /** No error */
     SMP_SERIAL_FRAME_ERROR_NONE = 0,
+    /** Payload is corrupted (bad crc, missing end byte...) */
     SMP_SERIAL_FRAME_ERROR_CORRUPTED = -1,
+    /** Payload too big to fit in buffer */
     SMP_SERIAL_FRAME_ERROR_PAYLOAD_TOO_BIG = -2,
 } SmpSerialFrameError;
 
@@ -111,9 +139,16 @@ typedef enum
     SMP_SERIAL_FRAME_DECODER_STATE_IN_FRAME_ESC,
 } SmpSerialFrameDecoderState;
 
+/**
+ * \ingroup serial_frame
+ * Callback structure passed to decoder
+ */
 typedef struct
 {
+    /** called when a new valid frame is available */
     void (*new_frame)(uint8_t *frame, size_t size, void *userdata);
+
+    /** called when an error occurs while decoding incoming data */
     void (*error)(SmpSerialFrameError error, void *userdata);
 } SmpSerialFrameDecoderCallbacks;
 

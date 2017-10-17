@@ -2,6 +2,12 @@
  * Copyright (C) 2017 Actronika SAS
  *     Author: Aurélien Zanelli <aurelien.zanelli@actronika.com>
  */
+/**
+ * @file
+ * \defgroup message Message
+ *
+ * Encode and decode message.
+ */
 
 #include "libsmp.h"
 #include "libsmp-private.h"
@@ -220,6 +226,13 @@ static size_t smp_message_compute_max_encoded_size(SmpMessage *msg)
 
 /* API */
 
+/**
+ * \ingroup message
+ * Initialze a SmpMessage
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] msgid the ID of the message
+ */
 void smp_message_init(SmpMessage *msg, uint32_t msgid)
 {
     return_if_fail(msg != NULL);
@@ -229,6 +242,19 @@ void smp_message_init(SmpMessage *msg, uint32_t msgid)
     msg->msgid = msgid;
 }
 
+/**
+ * \ingroup message
+ * Initialize a SmpMessage from the given buffer. Buffer will be parsed to
+ * populate the message.
+ * Warning: if message contains strings, the buffer shall not be overwritten or
+ * freed as long as message exist as strings only points to buffer.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] buffer the buffer to parse
+ * @param[in] size of the buffer
+ *
+ * @return 0 on success, a negative errno on error.
+ */
 int smp_message_init_from_buffer(SmpMessage *msg, const uint8_t *buffer,
         size_t size)
 {
@@ -269,11 +295,28 @@ int smp_message_init_from_buffer(SmpMessage *msg, const uint8_t *buffer,
     return 0;
 }
 
+/**
+ * \ingroup message
+ * Clear a SmpMessage.
+ *
+ * @param[in] msg a SmpMessage
+ */
 void smp_message_clear(SmpMessage *msg)
 {
     return_if_fail(msg != NULL);
 }
 
+/**
+ * \ingroup message
+ * Encode a SmpMessage in the provided buffer.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] buffer the destination buffer
+ * @param[in] size size of the buffer
+ *
+ * @return the number of bytes written in the buffer or a negativer errno on
+ * error.
+ */
 ssize_t smp_message_encode(SmpMessage *msg, uint8_t *buffer, size_t size)
 {
     size_t offset = 0;
@@ -304,6 +347,14 @@ ssize_t smp_message_encode(SmpMessage *msg, uint8_t *buffer, size_t size)
     return offset;
 }
 
+/**
+ * \ingroup message
+ * Get the message ID of a SmpMessage.
+ *
+ * @param[in] msg a SmpMessage
+ *
+ * @return the ID of the message.
+ */
 uint32_t smp_message_get_msgid(SmpMessage *msg)
 {
     return_val_if_fail(msg != NULL, 0);
@@ -311,6 +362,14 @@ uint32_t smp_message_get_msgid(SmpMessage *msg)
     return msg->msgid;
 }
 
+/**
+ * \ingroup message
+ * Get the number of valid arguments in a message.
+ *
+ * @param[in] msg a SmpMessage
+ *
+ * @return The number of arguments.
+ */
 int smp_message_n_args(SmpMessage *msg)
 {
     int i;
@@ -325,6 +384,18 @@ int smp_message_n_args(SmpMessage *msg)
     return i;
 }
 
+/**
+ * \ingroup message
+ * Get arguments from the message. Variable arguments should be the index
+ * of the message argument, type of the argument as a SmpType and pointer to
+ * a location to store the return value. The last variable should be set to -1.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index the index of the first argument to get
+ * @param[in] ... variable argument
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_get(SmpMessage *msg, int index, ...)
 {
     va_list ap;
@@ -415,6 +486,16 @@ int smp_message_get(SmpMessage *msg, int index, ...)
     return 0;
 }
 
+/**
+ * \ingroup message
+ * Get the message value pointed by index
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value a pointer to a SmpValue to hold the result
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_get_value(SmpMessage *msg, int index, SmpValue *value)
 {
     return_val_if_fail(msg != NULL, -EINVAL);
@@ -431,51 +512,172 @@ int smp_message_get_value(SmpMessage *msg, int index, SmpValue *value)
     return 0;
 }
 
+/**
+ * \ingroup message
+ * Get the message uint8 value pointed by index and store it into value.
+ * Caller is responsible to ensure that the value at index has the correct
+ * type.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value a pointer to an uint8 to hold the result
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_get_uint8(SmpMessage *msg, int index, uint8_t *value)
 {
     return smp_message_get(msg, index, SMP_TYPE_UINT8, value, -1);
 }
 
+/**
+ * \ingroup message
+ * Get the message int8 value pointed by index and store it into value.
+ * Caller is responsible to ensure that the value at index has the correct
+ * type.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value a pointer to an int8 to hold the result
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_get_int8(SmpMessage *msg, int index, int8_t *value)
 {
     return smp_message_get(msg, index, SMP_TYPE_INT8, value, -1);
 }
 
+/**
+ * \ingroup message
+ * Get the message uint16 value pointed by index and store it into value.
+ * Caller is responsible to ensure that the value at index has the correct
+ * type.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value a pointer to an uint16 to hold the result
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_get_uint16(SmpMessage *msg, int index, uint16_t *value)
 {
     return smp_message_get(msg, index, SMP_TYPE_UINT16, value, -1);
 }
 
+/**
+ * \ingroup message
+ * Get the message int16 value pointed by index and store it into value.
+ * Caller is responsible to ensure that the value at index has the correct
+ * type.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value a pointer to an int16 to hold the result
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_get_int16(SmpMessage *msg, int index, int16_t *value)
 {
     return smp_message_get(msg, index, SMP_TYPE_INT16, value, -1);
 }
 
+/**
+ * \ingroup message
+ * Get the message uint32 value pointed by index and store it into value.
+ * Caller is responsible to ensure that the value at index has the correct
+ * type.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value a pointer to an uint32 to hold the result
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_get_uint32(SmpMessage *msg, int index, uint32_t *value)
 {
     return smp_message_get(msg, index, SMP_TYPE_UINT32, value, -1);
 }
 
+/**
+ * \ingroup message
+ * Get the message int32 value pointed by index and store it into value.
+ * Caller is responsible to ensure that the value at index has the correct
+ * type.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value a pointer to an int32 to hold the result
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_get_int32(SmpMessage *msg, int index, int32_t *value)
 {
     return smp_message_get(msg, index, SMP_TYPE_INT32, value, -1);
 }
 
+/**
+ * \ingroup message
+ * Get the message uint64 value pointed by index and store it into value.
+ * Caller is responsible to ensure that the value at index has the correct
+ * type.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value a pointer to an uint64 to hold the result
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_get_uint64(SmpMessage *msg, int index, uint64_t *value)
 {
     return smp_message_get(msg, index, SMP_TYPE_UINT64, value, -1);
 }
 
+/**
+ * \ingroup message
+ * Get the message int64 value pointed by index and store it into value.
+ * Caller is responsible to ensure that the value at index has the correct
+ * type.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value a pointer to an int64 to hold the result
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_get_int64(SmpMessage *msg, int index, int64_t *value)
 {
     return smp_message_get(msg, index, SMP_TYPE_INT64, value, -1);
 }
 
+/**
+ * \ingroup message
+ * Get the message string value pointed by index and store it into value.
+ * Caller is responsible to ensure that the value at index has the correct
+ * type.
+ * The returned value is valid as long as the message exist.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value a pointer to a string to hold the result
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_get_cstring(SmpMessage *msg, int index, const char **value)
 {
     return smp_message_get(msg, index, SMP_TYPE_STRING, value, -1);
 }
 
+/**
+ * \ingroup message
+ * Set arguments ifthe message. Variable arguments should be the index
+ * of the message argument, type of the argument as a SmpType and pointer to
+ * a location to store the return value. The last variable should be set to -1.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index the index of the first argument to set
+ * @param[in] ... variable argument
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_set(SmpMessage *msg, int index, ...)
 {
     va_list ap;
@@ -534,6 +736,16 @@ int smp_message_set(SmpMessage *msg, int index, ...)
     return 0;
 }
 
+/**
+ * \ingroup message
+ * Set the message value pointed by index
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value a pointer to a SmpValue to set
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_set_value(SmpMessage *msg, int index, const SmpValue *value)
 {
     return_val_if_fail(msg != NULL, -EINVAL);
@@ -547,46 +759,137 @@ int smp_message_set_value(SmpMessage *msg, int index, const SmpValue *value)
     return 0;
 }
 
+/**
+ * \ingroup message
+ * Set the message value pointed by index to given uint8 value.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value the uint8 to set
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_set_uint8(SmpMessage *msg, int index, uint8_t value)
 {
     return smp_message_set(msg, index, SMP_TYPE_UINT8, value, -1);
 }
 
+/**
+ * \ingroup message
+ * Set the message value pointed by index to given int8 value.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value the int8 to set
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_set_int8(SmpMessage *msg, int index, int8_t value)
 {
     return smp_message_set(msg, index, SMP_TYPE_INT8, value, -1);
 }
 
+/**
+ * \ingroup message
+ * Set the message value pointed by index to given uint16 value.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value the uint16 to set
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_set_uint16(SmpMessage *msg, int index, uint16_t value)
 {
     return smp_message_set(msg, index, SMP_TYPE_UINT16, value, -1);
 }
 
+/**
+ * \ingroup message
+ * Set the message value pointed by index to given int16 value.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value the int16 to set
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_set_int16(SmpMessage *msg, int index, int16_t value)
 {
     return smp_message_set(msg, index, SMP_TYPE_INT16, value, -1);
 }
 
+/**
+ * \ingroup message
+ * Set the message value pointed by index to given uint32 value.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value the uint32 to set
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_set_uint32(SmpMessage *msg, int index, uint32_t value)
 {
     return smp_message_set(msg, index, SMP_TYPE_UINT32, value, -1);
 }
 
+/**
+ * \ingroup message
+ * Set the message value pointed by index to given int32 value.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value the int32 to set
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_set_int32(SmpMessage *msg, int index, int32_t value)
 {
     return smp_message_set(msg, index, SMP_TYPE_INT32, value, -1);
 }
 
+/**
+ * \ingroup message
+ * Set the message value pointed by index to given uint64 value.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value the uint64 to set
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_set_uint64(SmpMessage *msg, int index, uint64_t value)
 {
     return smp_message_set(msg, index, SMP_TYPE_UINT64, value, -1);
 }
 
+/**
+ * \ingroup message
+ * Set the message value pointed by index to given int64 value.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value the int64 to set
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_set_int64(SmpMessage *msg, int index, int64_t value)
 {
     return smp_message_set(msg, index, SMP_TYPE_INT64, value, -1);
 }
 
+/**
+ * \ingroup message
+ * Set the message value pointed by index to given string.
+ * Warning: the string is not copied so it shall exist as long as message exist.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value the string to set
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
 int smp_message_set_cstring(SmpMessage *msg, int index, const char *value)
 {
     return smp_message_set(msg, index, SMP_TYPE_STRING, value, -1);

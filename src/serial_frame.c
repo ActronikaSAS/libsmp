@@ -2,6 +2,13 @@
  * Copyright (C) 2017 Actronika SAS
  *     Author: Aurélien Zanelli <aurelien.zanelli@actronika.com>
  */
+/**
+ * @file
+ * \defgroup serial_frame SerialFrame
+ *
+ * Encode and decode a payload to be sent over a serial line with some
+ * error detection.
+ */
 
 #include "libsmp.h"
 #include <errno.h>
@@ -139,6 +146,18 @@ static int smp_serial_frame_write_byte(uint8_t *dest, uint8_t byte)
 
 /* API */
 
+/**
+ * \ingroup serial_frame
+ * Initialize a SmpSerialFrameContext using the given serial device and decoder
+ * callbacks.
+ *
+ * @param[in] ctx the SmpSerialFrameContext to initialize
+ * @param[in] device path to the serial device to use
+ * @param[in] cbs callback to use by the decoder
+ * @param[in] userdata a pointer to userdata which will be passed in callbacks.
+ *
+ * @return 0 on success, a negative errno value otherwise.
+ */
 int smp_serial_frame_init(SmpSerialFrameContext *ctx, const char *device,
         const SmpSerialFrameDecoderCallbacks *cbs, void *userdata)
 {
@@ -163,11 +182,27 @@ int smp_serial_frame_init(SmpSerialFrameContext *ctx, const char *device,
     return 0;
 }
 
+/**
+ * \ingroup serial_frame
+ * Deinitialize a SmpSerialFrameContext
+ *
+ * @param[in] ctx the SmpSerialFrameContext to deinitialize
+ */
 void smp_serial_frame_deinit(SmpSerialFrameContext *ctx)
 {
     close(ctx->serial_fd);
 }
 
+/**
+ * \ingroup serial_frame
+ * Encode and send a payload over the serial line.
+ *
+ * @param[in] ctx the SmpSerialFrameContext
+ * @param[in] buf the payload to send
+ * @param[in] size size of the payload to send
+ *
+ * @return 0 on success, a negative errno value otherwise.
+ */
 int smp_serial_frame_send(SmpSerialFrameContext *ctx, const uint8_t *buf, size_t size)
 {
     uint8_t txbuf[SMP_SERIAL_FRAME_MAX_FRAME_SIZE];
@@ -212,6 +247,16 @@ int smp_serial_frame_send(SmpSerialFrameContext *ctx, const uint8_t *buf, size_t
     return 0;
 }
 
+/**
+ * \ingroup serial_frame
+ * Process incoming data on the serial file descriptor.
+ * Decoded frame or errors during decoding are passed to their respective
+ * callbacks.
+ *
+ * @param[in] ctx the SmpSerialFrameContext
+ *
+ * @return 0 on success, a negative errno otherwise.
+ */
 int smp_serial_frame_process_recv_fd(SmpSerialFrameContext *ctx)
 {
     ssize_t rbytes;
