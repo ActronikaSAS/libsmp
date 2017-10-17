@@ -174,6 +174,8 @@ int smp_serial_frame_init(SmpSerialFrameContext *ctx, const char *device,
         const SmpSerialFrameDecoderCallbacks *cbs, void *userdata);
 void smp_serial_frame_deinit(SmpSerialFrameContext *ctx);
 
+int smp_serial_frame_get_fd(SmpSerialFrameContext *ctx);
+
 int smp_serial_frame_send(SmpSerialFrameContext *ctx, const uint8_t *buf,
         size_t size);
 int smp_serial_frame_process_recv_fd(SmpSerialFrameContext *ctx);

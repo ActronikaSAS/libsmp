@@ -196,6 +196,21 @@ void smp_serial_frame_deinit(SmpSerialFrameContext *ctx)
 
 /**
  * \ingroup serial_frame
+ * Get the file descriptor of the opened serial device.
+ *
+ * @param[in] ctx the SmpSerialFrameContext
+ *
+ * @return the fd on success, a negative errno value otherwise.
+ */
+int smp_serial_frame_get_fd(SmpSerialFrameContext *ctx)
+{
+    return_val_if_fail(ctx != NULL, -EINVAL);
+
+    return (ctx->serial_fd > 0) ? ctx->serial_fd : -EBADF;
+}
+
+/**
+ * \ingroup serial_frame
  * Encode and send a payload over the serial line.
  *
  * @param[in] ctx the SmpSerialFrameContext
