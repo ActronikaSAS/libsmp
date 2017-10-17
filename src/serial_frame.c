@@ -98,7 +98,8 @@ smp_serial_frame_decoder_process_byte_inframe(SmpSerialFrameDecoder *decoder,
     }
 }
 
-static void smp_serial_frame_decoder_process_byte(SmpSerialFrameDecoder *decoder,
+static void
+smp_serial_frame_decoder_process_byte(SmpSerialFrameDecoder *decoder,
         uint8_t byte)
 {
     switch (decoder->state) {
@@ -203,7 +204,8 @@ void smp_serial_frame_deinit(SmpSerialFrameContext *ctx)
  *
  * @return 0 on success, a negative errno value otherwise.
  */
-int smp_serial_frame_send(SmpSerialFrameContext *ctx, const uint8_t *buf, size_t size)
+int smp_serial_frame_send(SmpSerialFrameContext *ctx, const uint8_t *buf,
+        size_t size)
 {
     uint8_t txbuf[SMP_SERIAL_FRAME_MAX_FRAME_SIZE];
     size_t payload_size;
