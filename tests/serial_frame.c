@@ -122,7 +122,7 @@ static void test_smp_serial_frame_send_simple(void)
 
     CU_ASSERT_EQUAL(rbuf[0], (char) START_BYTE);
     CU_ASSERT_STRING_EQUAL(rbuf + 1, str);
-    CU_ASSERT_EQUAL(rbuf[1 + strlen(str) + 1], 0x21); /* checksum */
+    CU_ASSERT_EQUAL(rbuf[1 + strlen(str) + 1], 0x7b); /* checksum */
     CU_ASSERT_EQUAL(rbuf[1 + strlen(str) + 2], (char) END_BYTE);
 
     smp_serial_frame_deinit(&ctx);
@@ -148,7 +148,7 @@ static void test_smp_serial_frame_send(void)
         ESC_BYTE, ESC_BYTE, ESC_BYTE,
         START_BYTE, 0x42,
         /* checksum and end byte */
-        0x4c, END_BYTE
+        0xb5, END_BYTE
     };
     uint8_t big_payload[SMP_SERIAL_FRAME_MAX_FRAME_SIZE + 1] = { 0, };
     uint8_t rbuf[64];
@@ -190,26 +190,26 @@ static void test_smp_serial_frame_send_magic_crc(void)
     SmpSerialFrameContext ctx;
     uint8_t payload[3][1] = {
         /* special payload with checksum equals to magic bytes */
-        { START_BYTE },
-        { ESC_BYTE },
-        { END_BYTE },
+        { 0xb3 },
+        { 0x05 },
+        { 0x48 },
     };
-    uint8_t expected_frame[3][6] = {
+    uint8_t expected_frame[3][5] = {
         {
             START_BYTE,              /* begin frame */
-            ESC_BYTE, START_BYTE,    /* payload */
+            0xb3,                    /* payload */
             ESC_BYTE, START_BYTE,    /* escaped CRC */
             END_BYTE                 /* end frame */
         },
         {
             START_BYTE,              /* begin frame */
-            ESC_BYTE, ESC_BYTE,      /* payload */
+            0x05,                    /* payload */
             ESC_BYTE, ESC_BYTE,      /* escaped CRC */
             END_BYTE                 /* end frame */
         },
         {
             START_BYTE,              /* begin frame */
-            ESC_BYTE, END_BYTE,      /* payload */
+            0x48,                    /* payload */
             ESC_BYTE, END_BYTE,      /* escaped CRC */
             END_BYTE                 /* end frame */
         },
@@ -263,7 +263,7 @@ static uint8_t test_smp_serial_frame_recv_payload1[] = {
 };
 
 static uint8_t test_smp_serial_frame_recv_start_without_end_frame[] = {
-    START_BYTE, 0x43, 0x23, START_BYTE, 0x22, 0x33, 0x32, 0x23, END_BYTE
+    START_BYTE, 0x43, 0x23, START_BYTE, 0x22, 0x33, 0x32, 0xcd, END_BYTE
 };
 
 static uint8_t test_smp_serial_frame_recv_bad_crc[] = {
@@ -282,9 +282,9 @@ test_smp_serial_frame_recv_too_big_esc[SMP_SERIAL_FRAME_MAX_FRAME_SIZE + 10] = {
 
 static uint8_t
 test_smp_serial_frame_recv_crc_escaped[] = {
-    START_BYTE, ESC_BYTE, START_BYTE, ESC_BYTE, START_BYTE, END_BYTE,
-    START_BYTE, ESC_BYTE, END_BYTE, ESC_BYTE, END_BYTE, END_BYTE,
-    START_BYTE, ESC_BYTE, ESC_BYTE, ESC_BYTE, ESC_BYTE, END_BYTE,
+    START_BYTE, 0xb3, ESC_BYTE, START_BYTE, END_BYTE,
+    START_BYTE, 0x48, ESC_BYTE, END_BYTE, END_BYTE,
+    START_BYTE, 0x05, ESC_BYTE, ESC_BYTE, END_BYTE,
 };
 
 static uint8_t test_smp_serial_frame_recv_frames_and_garbage[] = {
@@ -292,13 +292,13 @@ static uint8_t test_smp_serial_frame_recv_frames_and_garbage[] = {
     0x33, 0x22, 0x01, 0x0a, END_BYTE, ESC_BYTE,
 
     /* now the first frame */
-    START_BYTE, 0x12, 0x4e, 0x1f, 0xb0, 0x00, 0x33, 0xc0, END_BYTE,
+    START_BYTE, 0x12, 0x4e, 0x1f, 0xb0, 0x00, 0x33, 0x90, END_BYTE,
 
     /* now some garbage */
     0x19, 0xaf, 0x43, 0x92, 0x09,
 
     /* the second frame */
-    START_BYTE, 0x12, 0x4e, 0x1f, 0xb0, 0x00, 0x33, 0xc0, END_BYTE
+    START_BYTE, 0x12, 0x4e, 0x1f, 0xb0, 0x00, 0x33, 0x90, END_BYTE
 };
 
 /* make it static to check address in callback */
@@ -337,13 +337,13 @@ static void test_smp_serial_frame_recv_new_frame(uint8_t *frame, size_t size,
             CU_ASSERT_EQUAL(size, 1);
             switch (test_smp_serial_frame_recv_new_frame_called) {
                 case 1:
-                    CU_ASSERT_EQUAL(frame[0], START_BYTE);
+                    CU_ASSERT_EQUAL(frame[0], 0xb3);
                     break;
                 case 2:
-                    CU_ASSERT_EQUAL(frame[0], END_BYTE);
+                    CU_ASSERT_EQUAL(frame[0], 0x48);
                     break;
                 case 3:
-                    CU_ASSERT_EQUAL(frame[0], ESC_BYTE);
+                    CU_ASSERT_EQUAL(frame[0], 0x05);
                     break;
                 default:
                     break;
