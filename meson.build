@@ -30,6 +30,16 @@ libsmp_src = [
     'src/serial_frame.c',
     ]
 
+cdata = configuration_data()
+
+# check for termios header
+if meson.get_compiler('c').has_function('tcgetattr', prefix: '#include <termios.h>')
+  cdata.set('HAVE_TERMIOS_H', true)
+endif
+
+configure_file(output : 'config.h',
+    configuration: cdata)
+
 libsmp_incdir = include_directories(['include'])
 
 libsmp = library('smp', libsmp_src,

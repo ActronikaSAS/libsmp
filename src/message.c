@@ -9,6 +9,8 @@
  * Encode and decode message.
  */
 
+#include "config.h"
+
 #include "libsmp.h"
 #include "libsmp-private.h"
 #include <errno.h>

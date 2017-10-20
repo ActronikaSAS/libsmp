@@ -10,12 +10,18 @@
  * error detection.
  */
 
+#include "config.h"
+
 #include "libsmp.h"
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef HAVE_TERMIOS_H
+#include <termios.h>
+#endif
 
 #include "libsmp-private.h"
 
@@ -145,6 +151,29 @@ static int smp_serial_frame_write_byte(uint8_t *dest, uint8_t byte)
     return offset;
 }
 
+static int serial_device_open(const char *device)
+{
+    int fd;
+
+    fd = open(device, O_RDWR | O_NONBLOCK);
+    if (fd < 0)
+        return -errno;
+
+#ifdef HAVE_TERMIOS_H
+    {
+        struct termios term;
+
+        tcgetattr(fd, &term);
+        cfsetispeed(&term, B115200);
+        cfsetospeed(&term, B115200);
+        cfmakeraw(&term);
+        tcsetattr(fd, TCSANOW, &term);
+    }
+#endif
+
+    return fd;
+}
+
 /* API */
 
 /**
@@ -170,9 +199,9 @@ int smp_serial_frame_init(SmpSerialFrameContext *ctx, const char *device,
     return_val_if_fail(cbs->new_frame != NULL, -EINVAL);
     return_val_if_fail(cbs->error != NULL, -EINVAL);
 
-    ctx->serial_fd = open(device, O_RDWR | O_NONBLOCK);
+    ctx->serial_fd = serial_device_open(device);
     if (ctx->serial_fd < 0)
-        return -errno;
+        return ctx->serial_fd;
 
     ret = smp_serial_frame_decoder_init(&ctx->decoder, cbs, userdata);
     if (ret < 0) {
