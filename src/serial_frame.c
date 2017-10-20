@@ -174,6 +174,64 @@ static int serial_device_open(const char *device)
     return fd;
 }
 
+#ifdef HAVE_TERMIOS_H
+static int set_serial_config(SmpSerialFrameContext *ctx,
+        SmpSerialFrameBaudrate baudrate, int parity, int flow_control)
+{
+    struct termios term;
+    speed_t speed;
+
+    tcgetattr(ctx->serial_fd, &term);
+    switch (baudrate) {
+        case SMP_SERIAL_FRAME_BAUDRATE_1200:
+            speed = B1200;
+            break;
+        case SMP_SERIAL_FRAME_BAUDRATE_2400:
+            speed = B2400;
+            break;
+        case SMP_SERIAL_FRAME_BAUDRATE_4800:
+            speed = B4800;
+            break;
+        case SMP_SERIAL_FRAME_BAUDRATE_9600:
+            speed = B9600;
+            break;
+        case SMP_SERIAL_FRAME_BAUDRATE_19200:
+            speed = B19200;
+            break;
+        case SMP_SERIAL_FRAME_BAUDRATE_38400:
+            speed = B38400;
+            break;
+        case SMP_SERIAL_FRAME_BAUDRATE_57600:
+            speed = B57600;
+            break;
+        case SMP_SERIAL_FRAME_BAUDRATE_115200:
+        default:
+            speed = B115200;
+            break;
+    }
+    cfsetispeed(&term, speed);
+    cfsetospeed(&term, speed);
+
+    if (parity)
+        term.c_iflag |= INPCK;
+    else
+        term.c_iflag &= ~INPCK;
+
+    if (flow_control)
+        term.c_iflag |= IXON;
+    else
+        term.c_iflag &= ~IXON;
+
+    return 0;
+}
+#else
+static int set_serial_config(SmpSerialFrameContext *ctx,
+        SmpSerialFrameBaudrate baudrate, int parity, int flow_control)
+{
+    return -ENOSYS;
+}
+#endif
+
 /* API */
 
 /**
@@ -221,6 +279,26 @@ int smp_serial_frame_init(SmpSerialFrameContext *ctx, const char *device,
 void smp_serial_frame_deinit(SmpSerialFrameContext *ctx)
 {
     close(ctx->serial_fd);
+}
+
+/**
+ * \ingroup serial_frame
+ * Set serial device config. Depending on the system, it could be not
+ * implemented.
+ *
+ * @param[in] ctx the SmpSerialFrameContext
+ * @param[in] baudrate the baudrate
+ * @param[in] parity 1 to enable parity, 0 to disable
+ * @param[in] flow_control 1 to enable flow control, 0 to disable
+ *
+ * @return 0 on success, a negative errno otherwise.
+ */
+int smp_serial_frame_set_config(SmpSerialFrameContext *ctx,
+        SmpSerialFrameBaudrate baudrate, int parity, int flow_control)
+{
+    return_val_if_fail(ctx != NULL, -EINVAL);
+
+    return set_serial_config(ctx, baudrate, parity, flow_control);
 }
 
 /**

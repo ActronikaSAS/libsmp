@@ -141,6 +141,22 @@ typedef enum
 
 /**
  * \ingroup serial_frame
+ * Serial baudrate
+ */
+typedef enum
+{
+    SMP_SERIAL_FRAME_BAUDRATE_1200,      /**< 1200 bauds */
+    SMP_SERIAL_FRAME_BAUDRATE_2400,      /**< 2400 bauds */
+    SMP_SERIAL_FRAME_BAUDRATE_4800,      /**< 4800 bauds */
+    SMP_SERIAL_FRAME_BAUDRATE_9600,      /**< 9600 bauds */
+    SMP_SERIAL_FRAME_BAUDRATE_19200,     /**< 19200 bauds */
+    SMP_SERIAL_FRAME_BAUDRATE_38400,     /**< 38400 bauds */
+    SMP_SERIAL_FRAME_BAUDRATE_57600,     /**< 57600 bauds */
+    SMP_SERIAL_FRAME_BAUDRATE_115200,    /**< 115200 bauds */
+} SmpSerialFrameBaudrate;
+
+/**
+ * \ingroup serial_frame
  * Callback structure passed to decoder
  */
 typedef struct
@@ -173,6 +189,9 @@ typedef struct
 int smp_serial_frame_init(SmpSerialFrameContext *ctx, const char *device,
         const SmpSerialFrameDecoderCallbacks *cbs, void *userdata);
 void smp_serial_frame_deinit(SmpSerialFrameContext *ctx);
+
+int smp_serial_frame_set_config(SmpSerialFrameContext *ctx,
+        SmpSerialFrameBaudrate baudrate, int parity, int flow_control);
 
 int smp_serial_frame_get_fd(SmpSerialFrameContext *ctx);
 
