@@ -11,10 +11,18 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
+#ifndef __AVR
 #include <sys/types.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifdef __AVR
+/* we don't have sys/types.h in avr-libc so define ssize_t ourself */
+typedef long ssize_t;
 #endif
 
 /* Message */

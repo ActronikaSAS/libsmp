@@ -27,9 +27,16 @@ add_project_arguments([
 
 libsmp_src = [
     'src/message.c',
-    'src/serial-device-posix.c',
     'src/serial_frame.c'
     ]
+
+# select SerialDevice implementation depending on cpu family
+if host_machine.cpu_family() == 'atmega'
+  libsmp_src += ['src/serial-device-avr.c']
+else
+  libsmp_src += ['src/serial-device-posix.c']
+endif
+
 
 cdata = configuration_data()
 

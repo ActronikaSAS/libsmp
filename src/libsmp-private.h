@@ -8,7 +8,11 @@
 
 #include "serial-device.h"
 
+#ifdef __AVR
+#include "libsmp-private-avr.h"
+#else
 #include "libsmp-private-posix.h"
+#endif
 
 #define return_if_fail(expr) \
     do { \
@@ -21,5 +25,7 @@
         if (!(expr)) \
             return val; \
     } while (0);
+
+#define SMP_N_ELEMENTS(arr) (sizeof((arr))/sizeof((arr)[0]))
 
 #endif
