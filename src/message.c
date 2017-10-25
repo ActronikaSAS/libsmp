@@ -670,7 +670,7 @@ int smp_message_get_cstring(SmpMessage *msg, int index, const char **value)
 
 /**
  * \ingroup message
- * Set arguments ifthe message. Variable arguments should be the index
+ * Set arguments in the message. Variable arguments should be the index
  * of the message argument, type of the argument as a SmpType and pointer to
  * a location to store the return value. The last variable should be set to -1.
  *
