@@ -481,7 +481,7 @@ int smp_message_get(SmpMessage *msg, int index, ...)
                 return -EBADF;
         }
 
-        index = va_arg(ap, int32_t);
+        index = va_arg(ap, int);
     } while (index >= 0);
 
     va_end(ap);
