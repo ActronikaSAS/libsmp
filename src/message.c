@@ -277,7 +277,7 @@ int smp_message_init_from_buffer(SmpMessage *msg, const uint8_t *buffer,
     if (size < MSG_HEADER_SIZE + argsize)
         return -EBADMSG;
 
-    offset = 8;
+    offset = MSG_HEADER_SIZE;
     for (i = 0; size - offset > 0 && i < SMP_MESSAGE_MAX_VALUES; i++) {
         int ret;
 
@@ -332,7 +332,7 @@ ssize_t smp_message_encode(SmpMessage *msg, uint8_t *buffer, size_t size)
 
     /* write header */
     smp_write_uint32(buffer, msg->msgid);
-    offset += 8;
+    offset += MSG_HEADER_SIZE;
 
     for (i = 0; i < SMP_MESSAGE_MAX_VALUES; i++) {
         const SmpValue *val = &msg->values[i];
