@@ -24,6 +24,7 @@ add_project_arguments([
     '-Wno-type-limits'
     ], language : 'c')
 
+libsmp_incdir = include_directories(['include'])
 
 libsmp_src = [
     'src/message.c',
@@ -37,7 +38,7 @@ else
   libsmp_src += ['src/serial-device-posix.c']
 endif
 
-
+## Private configuration
 cdata = configuration_data()
 
 # check for termios header
@@ -48,12 +49,24 @@ endif
 configure_file(output : 'config.h',
     configuration: cdata)
 
-libsmp_incdir = include_directories(['include'])
+## Public config file
+cdata = configuration_data()
+
+cdata.set('SMP_MESSAGE_MAX_VALUES', get_option('message-max-values').to_int(),
+    description : 'The maximum numbers of arguments in a message')
+cdata.set('SMP_SERIAL_FRAME_MAX_FRAME_SIZE',
+    get_option('serial-frame-max-size').to_int(),
+    description : 'The maximum frame size in bytes')
+
+configure_file(output : 'libsmp-config.h',
+    configuration : cdata)
+
+libsmp_config_incdir = include_directories('.')
 
 libsmp = library('smp', libsmp_src,
-    include_directories : [libsmp_incdir])
+    include_directories : [libsmp_incdir, libsmp_config_incdir])
 
 libsmp_dep = declare_dependency(link_with : libsmp,
-    include_directories : [libsmp_incdir])
+    include_directories : [libsmp_incdir, libsmp_config_incdir])
 
 subdir('tests')

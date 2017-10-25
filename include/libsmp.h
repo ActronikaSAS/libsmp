@@ -16,6 +16,8 @@
 #include <sys/types.h>
 #endif
 
+#include <libsmp-config.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,9 +28,6 @@ typedef long ssize_t;
 #endif
 
 /* Message */
-
-/** The maximum numbers of arguments in a message */
-#define SMP_MESSAGE_MAX_VALUES 16
 
 /**
  * \ingroup message
@@ -119,12 +118,6 @@ int smp_message_set_int64(SmpMessage *msg, int index, int64_t value);
 int smp_message_set_cstring(SmpMessage *msg, int index, const char *value);
 
 /* Serial frame API */
-
-/**
- * \ingroup serial_frame
- * The maximum frame size in bytes.
- */
-#define SMP_SERIAL_FRAME_MAX_FRAME_SIZE 1024
 
 /**
  * \ingroup serial_frame

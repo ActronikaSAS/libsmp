@@ -1,0 +1,4 @@
+option('message-max-values', type : 'string', value : '16',
+        description : 'The maximum numbers of arguments in a message')
+option('serial-frame-max-size', type : 'string', value : '1024',
+        description : 'The maximum frame size in bytes')
