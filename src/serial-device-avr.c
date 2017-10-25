@@ -67,6 +67,20 @@ static UARTDevice avr_uart_devices[] = {
 };
 
 DEFINE_RX_ISR(&avr_uart_devices[0], USART_RX_vect);
+
+#elif defined(__AVR_ATmega2560__)
+static UARTDevice avr_uart_devices[] = {
+    DEFINE_UART_DEVICE("serial0", UDR0, UCSR0A, UCSR0B, UCSR0C, UBRR0L, UBRR0H),
+    DEFINE_UART_DEVICE("serial1", UDR1, UCSR1A, UCSR1B, UCSR1C, UBRR1L, UBRR1H),
+    DEFINE_UART_DEVICE("serial2", UDR2, UCSR2A, UCSR2B, UCSR2C, UBRR2L, UBRR2H),
+    DEFINE_UART_DEVICE("serial3", UDR3, UCSR3A, UCSR3B, UCSR3C, UBRR3L, UBRR3H),
+};
+
+DEFINE_RX_ISR(&avr_uart_devices[0], USART0_RX_vect);
+DEFINE_RX_ISR(&avr_uart_devices[1], USART1_RX_vect);
+DEFINE_RX_ISR(&avr_uart_devices[2], USART2_RX_vect);
+DEFINE_RX_ISR(&avr_uart_devices[3], USART3_RX_vect);
+
 #endif
 
 static uint8_t avr_uart_n_devices = SMP_N_ELEMENTS(avr_uart_devices);
