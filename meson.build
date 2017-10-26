@@ -57,6 +57,9 @@ cdata.set('SMP_MESSAGE_MAX_VALUES', get_option('message-max-values').to_int(),
 cdata.set('SMP_SERIAL_FRAME_MAX_FRAME_SIZE',
     get_option('serial-frame-max-size').to_int(),
     description : 'The maximum frame size in bytes')
+cdata.set('SMP_SERIAL_DEVICE_AVR_CBUF_SIZE',
+    get_option('avr-uart-buffer-size').to_int(),
+    description : 'The buffer size used for UART reception on AVR')
 
 configure_file(output : 'libsmp-config.h',
     configuration : cdata)

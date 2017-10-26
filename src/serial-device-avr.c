@@ -12,8 +12,6 @@
 #include "serial-device.h"
 #include "libsmp-private.h"
 
-#define SERIAL_DEVICE_AVR_CBUF_SIZE 32
-
 typedef struct
 {
     volatile uint8_t *dr;
@@ -30,7 +28,7 @@ typedef struct
 
     UARTDeviceRegisters regs;
 
-    uint8_t cbuf[SERIAL_DEVICE_AVR_CBUF_SIZE];
+    uint8_t cbuf[SMP_SERIAL_DEVICE_AVR_CBUF_SIZE];
     uint8_t rindex;
     uint8_t windex;
 } UARTDevice;
@@ -98,7 +96,7 @@ static void rx_interrupt_handler(UARTDevice *dev)
 {
     dev->cbuf[dev->windex] = *(dev->regs.dr);
     dev->windex++;
-    if (dev->windex >= SERIAL_DEVICE_AVR_CBUF_SIZE)
+    if (dev->windex >= SMP_SERIAL_DEVICE_AVR_CBUF_SIZE)
         dev->windex = 0;
 }
 
@@ -379,7 +377,7 @@ ssize_t serial_device_read(int fd, void *buf, size_t size)
 
         ((uint8_t *) buf)[i] = dev->cbuf[dev->rindex];
         dev->rindex++;
-        if (dev->rindex >= SERIAL_DEVICE_AVR_CBUF_SIZE)
+        if (dev->rindex >= SMP_SERIAL_DEVICE_AVR_CBUF_SIZE)
             dev->rindex = 0;
     }
 
