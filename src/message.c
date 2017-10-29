@@ -152,7 +152,7 @@ static ssize_t smp_message_decode_value(SmpValue *value, const uint8_t *buffer,
             value->value.i64 = smp_read_int64(buffer);
             break;
         case SMP_TYPE_STRING:
-            value->value.cstring = smp_message_decode_string(buffer, size);
+            value->value.cstring = smp_message_decode_string(buffer, size - 1);
 
             /* recalculate argsize with string size */
             argsize = 1 + smp_value_compute_size(value);
