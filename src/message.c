@@ -215,13 +215,14 @@ static ssize_t smp_message_encode_value(const SmpValue *value, uint8_t *buffer)
     return smp_value_compute_size(value) + 1;
 }
 
+/* return the maximum size of the encoded payload (w/o smp header) */
 static size_t smp_message_compute_max_encoded_size(SmpMessage *msg)
 {
     size_t ret = 0;
     int i;
 
     for (i = 0; i < SMP_MESSAGE_MAX_VALUES; i++)
-        ret += smp_value_compute_size(&msg->values[i]);
+        ret += (1 + smp_value_compute_size(&msg->values[i]));
 
     return ret;
 }
