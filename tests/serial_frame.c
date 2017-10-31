@@ -27,6 +27,9 @@ static void test_setup(TestCtx *ctx)
 {
     int ret;
 
+    /* ensure fifo doesn't exist */
+    unlink(FIFO_PATH);
+
     ret = mkfifo(FIFO_PATH, S_IWUSR | S_IRUSR);
     CU_ASSERT_EQUAL_FATAL(ret, 0);
 
