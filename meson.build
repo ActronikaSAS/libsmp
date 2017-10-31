@@ -46,6 +46,15 @@ if meson.get_compiler('c').has_function('tcgetattr', prefix: '#include <termios.
   cdata.set('HAVE_TERMIOS_H', true)
 endif
 
+cdata.set('AVR_ENABLE_SERIAL0', get_option('avr-enable-serial0'),
+    description : 'Enable AVR Serial0 handling')
+cdata.set('AVR_ENABLE_SERIAL1', get_option('avr-enable-serial1'),
+    description : 'Enable AVR Serial1 handling')
+cdata.set('AVR_ENABLE_SERIAL2', get_option('avr-enable-serial2'),
+    description : 'Enable AVR Serial2 handling')
+cdata.set('AVR_ENABLE_SERIAL3', get_option('avr-enable-serial3'),
+    description : 'Enable AVR Serial3 handling')
+
 configure_file(output : 'config.h',
     configuration: cdata)
 

@@ -4,3 +4,11 @@ option('serial-frame-max-size', type : 'string', value : '1024',
         description : 'The maximum frame size in bytes')
 option('avr-uart-buffer-size', type : 'string', value : '64',
         description : 'The buffer size used for UART reception on AVR')
+option('avr-enable-serial0', type : 'boolean', value : true,
+        description : 'Enable AVR Serial0 handling')
+option('avr-enable-serial1', type : 'boolean', value : false,
+        description : 'Enable AVR Serial1 handling')
+option('avr-enable-serial2', type : 'boolean', value : false,
+        description : 'Enable AVR Serial2 handling')
+option('avr-enable-serial3', type : 'boolean', value : false,
+        description : 'Enable AVR Serial3 handling')
