@@ -221,8 +221,10 @@ static size_t smp_message_compute_max_encoded_size(SmpMessage *msg)
     size_t ret = 0;
     int i;
 
-    for (i = 0; i < SMP_MESSAGE_MAX_VALUES; i++)
-        ret += (1 + smp_value_compute_size(&msg->values[i]));
+    for (i = 0; i < SMP_MESSAGE_MAX_VALUES; i++) {
+        if (msg->values[i].type != SMP_TYPE_NONE)
+            ret += (1 + smp_value_compute_size(&msg->values[i]));
+    }
 
     return ret;
 }
