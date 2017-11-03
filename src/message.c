@@ -93,12 +93,12 @@ static const char *smp_message_decode_string(const uint8_t *buffer, size_t size)
 {
     size_t strsize;
 
-    if (size < 3)
+    if (size < 2)
         return NULL;
 
     strsize = smp_read_uint16(buffer);
 
-    if (size < 3 + strsize)
+    if (size < 2 + strsize)
         return NULL;
 
     /* make sure there is a nul byte at the end, note that strsize includes
