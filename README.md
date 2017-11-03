@@ -1,5 +1,7 @@
 # libsmp
 
+[![Build Status](http://jenkins.actronika.com:8080/buildStatus/icon?job=libsmp-build)](https://jenkins.actronika.com:8080/job/libsmp-build/)
+
 libsmp stands for Simple Message Protocol library. It aims to provide a simple
 protocol to exchange message between two peers over a serial lane.
 Messages are identified by an ID, choosen by user application, and contains 0 or
