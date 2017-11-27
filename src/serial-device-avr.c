@@ -67,6 +67,32 @@ ISR(vector) \
     rx_interrupt_handler(device); \
 }
 
+/* some dirty things to have serial device index in the definition arrays for
+ * use in the interrupt handler */
+#if defined(AVR_ENABLE_SERIAL0)
+#define SERIAL_DEVICE_0_INDEX 0
+#else
+#define SERIAL_DEVICE_0_INDEX -1
+#endif
+
+#if defined(AVR_ENABLE_SERIAL1)
+#define SERIAL_DEVICE_1_INDEX (SERIAL_DEVICE_0_INDEX + 1)
+#else
+#define SERIAL_DEVICE_1_INDEX SERIAL_DEVICE_0_INDEX
+#endif
+
+#if defined(AVR_ENABLE_SERIAL2)
+#define SERIAL_DEVICE_2_INDEX (SERIAL_DEVICE_1_INDEX + 1)
+#else
+#define SERIAL_DEVICE_2_INDEX SERIAL_DEVICE_1_INDEX
+#endif
+
+#if defined(AVR_ENABLE_SERIAL3)
+#define SERIAL_DEVICE_3_INDEX (SERIAL_DEVICE_2_INDEX + 1)
+#else
+#define SERIAL_DEVICE_3_INDEX SERIAL_DEVICE_2_INDEX
+#endif
+
 /* UART devices definitions according to used avr
  * Assume all registers have the same layout across uart module */
 
@@ -79,7 +105,7 @@ static UARTDevice avr_uart_devices[] = {
 };
 
 #if defined(AVR_ENABLE_SERIAL0)
-DEFINE_RX_ISR(&avr_uart_devices[0], USART_RX_vect);
+DEFINE_RX_ISR(&avr_uart_devices[SERIAL_DEVICE_0_INDEX], USART_RX_vect);
 #endif
 
 #elif defined(__AVR_ATmega2560__)
@@ -99,16 +125,16 @@ static UARTDevice avr_uart_devices[] = {
 };
 
 #if defined(AVR_ENABLE_SERIAL0)
-DEFINE_RX_ISR(&avr_uart_devices[0], USART0_RX_vect);
+DEFINE_RX_ISR(&avr_uart_devices[SERIAL_DEVICE_0_INDEX], USART0_RX_vect);
 #endif
 #if defined(AVR_ENABLE_SERIAL1)
-DEFINE_RX_ISR(&avr_uart_devices[1], USART1_RX_vect);
+DEFINE_RX_ISR(&avr_uart_devices[SERIAL_DEVICE_1_INDEX], USART1_RX_vect);
 #endif
 #if defined(AVR_ENABLE_SERIAL2)
-DEFINE_RX_ISR(&avr_uart_devices[2], USART2_RX_vect);
+DEFINE_RX_ISR(&avr_uart_devices[SERIAL_DEVICE_2_INDEX], USART2_RX_vect);
 #endif
 #if defined(AVR_ENABLE_SERIAL3)
-DEFINE_RX_ISR(&avr_uart_devices[3], USART3_RX_vect);
+DEFINE_RX_ISR(&avr_uart_devices[SERIAL_DEVICE_3_INDEX], USART3_RX_vect);
 #endif
 
 #endif
