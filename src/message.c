@@ -416,6 +416,7 @@ int smp_message_n_args(SmpMessage *msg)
 int smp_message_get(SmpMessage *msg, int index, ...)
 {
     va_list ap;
+    int ret;
 
     return_val_if_fail(msg != NULL, -EINVAL);
     return_val_if_fail(index >= 0, -EINVAL);
@@ -425,12 +426,16 @@ int smp_message_get(SmpMessage *msg, int index, ...)
     do {
         SmpType type;
 
-        if (index >= SMP_MESSAGE_MAX_VALUES)
-            return -ENOENT;
+        if (index >= SMP_MESSAGE_MAX_VALUES) {
+            ret = -ENOENT;
+            goto done;
+        }
 
         type = va_arg(ap, int);
-        if (type != msg->values[index].type)
-            return -EBADF;
+        if (type != msg->values[index].type) {
+            ret = -EBADF;
+            goto done;
+        }
 
         switch (type) {
             case SMP_TYPE_UINT8: {
@@ -493,14 +498,18 @@ int smp_message_get(SmpMessage *msg, int index, ...)
             }
 
             default:
-                return -EBADF;
+                ret = -EBADF;
+                goto done;
         }
 
         index = va_arg(ap, int);
     } while (index >= 0);
 
+    ret = 0;
+
+done:
     va_end(ap);
-    return 0;
+    return ret;
 }
 
 /**
@@ -744,13 +753,16 @@ int smp_message_set(SmpMessage *msg, int index, ...)
 
         ret = smp_message_set_value(msg, index, &val);
         if (ret < 0)
-            return ret;
+            goto done;
 
         index = va_arg(ap, int);
     } while (index >= 0);
 
+    ret = 0;
+
+done:
     va_end(ap);
-    return 0;
+    return ret;
 }
 
 /**
