@@ -409,9 +409,11 @@ static void test_smp_serial_frame_terminate_frame(TestCtx *tctx,
         SmpSerialFrameContext *ctx)
 {
     uint8_t byte = END_BYTE;
+    int ret;
 
     test_smp_serial_frame_recv_test_case = NONE;
-    write(tctx->fd, &byte, 1);
+    ret = write(tctx->fd, &byte, 1);
+    CU_ASSERT_EQUAL_FATAL(ret, 1);
     smp_serial_frame_process_recv_fd(ctx);
 }
 
