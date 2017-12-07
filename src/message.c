@@ -519,7 +519,7 @@ int smp_message_get_value(SmpMessage *msg, int index, SmpValue *value)
     return_val_if_fail(index >= 0, -EINVAL);
     return_val_if_fail(value != NULL, -EINVAL);
 
-    if (index > SMP_MESSAGE_MAX_VALUES)
+    if (index >= SMP_MESSAGE_MAX_VALUES)
         return -ENOENT;
 
     if (msg->values[index].type == SMP_TYPE_NONE)
