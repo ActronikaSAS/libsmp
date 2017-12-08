@@ -83,6 +83,14 @@ smp_serial_frame_decoder_process_byte_inframe(SmpSerialFrameDecoder *decoder,
            size_t framesize;
            uint8_t cs;
 
+           /* we should at least have the CRC */
+           if (decoder->frame_offset < 1) {
+               decoder->cbs.error(SMP_SERIAL_FRAME_ERROR_CORRUPTED,
+                       decoder->userdata);
+               decoder->state = SMP_SERIAL_FRAME_DECODER_STATE_WAIT_HEADER;
+               break;
+           }
+
            /* framesize is without the CRC */
            framesize = decoder->frame_offset - 1;
 

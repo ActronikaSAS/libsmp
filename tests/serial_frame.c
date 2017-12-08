@@ -270,6 +270,7 @@ typedef enum
     FRAME_TOO_BIG_ESC,
     CRC_ESCAPED,
     FRAMES_AND_GARBAGE,
+    START_END,
 } TestSerialFrameRecvTestCase;
 
 static uint8_t test_smp_serial_frame_recv_payload1[] = {
@@ -314,6 +315,13 @@ static uint8_t test_smp_serial_frame_recv_frames_and_garbage[] = {
 
     /* the second frame */
     START_BYTE, 0x12, 0x4e, 0x1f, 0xb0, 0x00, 0x33, 0xc0, END_BYTE
+};
+
+static uint8_t test_smp_serial_frame_recv_start_end[] = {
+    /* just a start byte followed by an end byte which causes an underflow
+     * on framesize variable computation and causes an out of bound read
+     * when computing checksum */
+    START_BYTE, END_BYTE
 };
 
 /* make it static to check address in callback */
@@ -393,6 +401,7 @@ static void test_smp_serial_frame_recv_error(SmpSerialFrameError error, void *us
 
     test_smp_serial_frame_recv_error_called = 1;
     switch (test_smp_serial_frame_recv_test_case) {
+        case START_END:
         case START_WITHOUT_END:
             CU_ASSERT_EQUAL(error, SMP_SERIAL_FRAME_ERROR_CORRUPTED);
             break;
@@ -531,6 +540,19 @@ static void test_smp_serial_frame_recv(void)
     CU_ASSERT_EQUAL(ret, 0);
     CU_ASSERT_EQUAL(test_smp_serial_frame_recv_new_frame_called, 2);
     CU_ASSERT_FALSE(test_smp_serial_frame_recv_error_called);
+
+    /* Empty frame without CRC (just START and STOP) */
+    ret = write(tctx.fd, test_smp_serial_frame_recv_start_end,
+            sizeof(test_smp_serial_frame_recv_start_end));
+    CU_ASSERT_EQUAL_FATAL(ret, sizeof(test_smp_serial_frame_recv_start_end));
+
+    test_smp_serial_frame_recv_new_frame_called = 0;
+    test_smp_serial_frame_recv_error_called = 0;
+    test_smp_serial_frame_recv_test_case = START_END;
+    ret = smp_serial_frame_process_recv_fd(&ctx);
+    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL(test_smp_serial_frame_recv_new_frame_called, 0);
+    CU_ASSERT_EQUAL(test_smp_serial_frame_recv_error_called, 1);
 
     smp_serial_frame_deinit(&ctx);
     test_teardown(&tctx);
