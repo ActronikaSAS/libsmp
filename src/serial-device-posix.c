@@ -125,10 +125,13 @@ int serial_device_set_config(int fd, SmpSerialFrameBaudrate baudrate,
                 break;
         }
 
-        if (flow_control)
+        if (flow_control) {
             term.c_iflag |= IXON;
-        else
+            term.c_iflag |= IXOFF;
+        } else {
             term.c_iflag &= ~IXON;
+            term.c_iflag &= ~IXOFF;
+        }
 
         ret = tcsetattr(fd, TCSANOW, &term);
         if (ret < 0)
