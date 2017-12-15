@@ -370,7 +370,7 @@ void serial_device_close(int fd)
 }
 
 int serial_device_set_config(int fd, SmpSerialFrameBaudrate baudrate,
-        int parity, int flow_control)
+        SmpSerialFrameParity parity, int flow_control)
 {
     UARTDevice *dev;
     UARTDeviceRegisters *regs;

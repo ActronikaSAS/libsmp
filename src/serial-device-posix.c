@@ -67,7 +67,7 @@ void serial_device_close(int fd)
 }
 
 int serial_device_set_config(int fd, SmpSerialFrameBaudrate baudrate,
-        int parity, int flow_control)
+        SmpSerialFrameParity parity, int flow_control)
 {
     int ret = -ENOSYS;
 
@@ -110,10 +110,20 @@ int serial_device_set_config(int fd, SmpSerialFrameBaudrate baudrate,
         cfsetispeed(&term, speed);
         cfsetospeed(&term, speed);
 
-        if (parity)
-            term.c_iflag |= INPCK;
-        else
-            term.c_iflag &= ~INPCK;
+        switch (parity) {
+            case SMP_SERIAL_FRAME_PARITY_ODD:
+                term.c_cflag |= PARENB;
+                term.c_cflag |= PARODD;
+                break;
+            case SMP_SERIAL_FRAME_PARITY_EVEN:
+                term.c_cflag |= PARENB;
+                term.c_cflag &= ~PARODD;
+                break;
+            case SMP_SERIAL_FRAME_PARITY_NONE:
+            default:
+                term.c_cflag &= ~PARENB;
+                break;
+        }
 
         if (flow_control)
             term.c_iflag |= IXON;

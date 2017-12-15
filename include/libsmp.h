@@ -170,6 +170,17 @@ typedef enum
 
 /**
  * \ingroup serial_frame
+ * Parity
+ */
+typedef enum
+{
+    SMP_SERIAL_FRAME_PARITY_NONE,    /**< No parity */
+    SMP_SERIAL_FRAME_PARITY_ODD,     /**< Odd parity */
+    SMP_SERIAL_FRAME_PARITY_EVEN,    /**< Even parity */
+} SmpSerialFrameParity;
+
+/**
+ * \ingroup serial_frame
  * Callback structure passed to decoder
  */
 typedef struct
@@ -204,7 +215,8 @@ int smp_serial_frame_init(SmpSerialFrameContext *ctx, const char *device,
 void smp_serial_frame_deinit(SmpSerialFrameContext *ctx);
 
 int smp_serial_frame_set_config(SmpSerialFrameContext *ctx,
-        SmpSerialFrameBaudrate baudrate, int parity, int flow_control);
+        SmpSerialFrameBaudrate baudrate, SmpSerialFrameParity parity,
+        int flow_control);
 
 int smp_serial_frame_get_fd(SmpSerialFrameContext *ctx);
 

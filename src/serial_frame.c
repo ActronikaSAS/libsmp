@@ -222,13 +222,14 @@ void smp_serial_frame_deinit(SmpSerialFrameContext *ctx)
  *
  * @param[in] ctx the SmpSerialFrameContext
  * @param[in] baudrate the baudrate
- * @param[in] parity 1 to enable parity, 0 to disable
+ * @param[in] parity the parity configuration
  * @param[in] flow_control 1 to enable flow control, 0 to disable
  *
  * @return 0 on success, a negative errno otherwise.
  */
 int smp_serial_frame_set_config(SmpSerialFrameContext *ctx,
-        SmpSerialFrameBaudrate baudrate, int parity, int flow_control)
+        SmpSerialFrameBaudrate baudrate, SmpSerialFrameParity parity,
+        int flow_control)
 {
     return_val_if_fail(ctx != NULL, -EINVAL);
 
