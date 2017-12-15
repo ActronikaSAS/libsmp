@@ -369,6 +369,7 @@ void serial_device_close(int fd)
     *regs->csr_b &= ~(_BV(TXEN0));
 }
 
+/* Note: AVR UART module has now built-in flow control */
 int serial_device_set_config(int fd, SmpSerialFrameBaudrate baudrate,
         SmpSerialFrameParity parity, int flow_control)
 {
@@ -387,7 +388,19 @@ int serial_device_set_config(int fd, SmpSerialFrameBaudrate baudrate,
 
     set_baudrate(dev, baudrate);
 
-    /* FIXME: don't ignore parity and flow control */
+    switch (parity) {
+        case SMP_SERIAL_FRAME_PARITY_ODD:
+            *regs->csr_c |= (_BV(UPM00) | _BV(UPM01));
+            break;
+        case SMP_SERIAL_FRAME_PARITY_EVEN:
+            *regs->csr_c |= _BV(UPM01);
+            *regs->csr_c &= ~(_BV(UPM00));
+            break;
+        case SMP_SERIAL_FRAME_PARITY_NONE:
+        default:
+            *regs->csr_c &= ~(_BV(UPM00) | _BV(UPM01));
+            break;
+    }
 
     /* enable rx/tx */
     *regs->csr_b |= _BV(RXEN0);
