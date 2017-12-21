@@ -338,7 +338,7 @@ static int init_uart_device(UARTDevice *device)
 }
 
 /* SerialDevice API */
-int serial_device_open(const char *device)
+int smp_serial_device_open(const char *device)
 {
     int ret = -ENOENT;
     uint8_t i;
@@ -353,7 +353,7 @@ int serial_device_open(const char *device)
     return (ret == 0) ? i : ret;
 }
 
-void serial_device_close(int fd)
+void smp_serial_device_close(int fd)
 {
     UARTDevice *dev;
     UARTDeviceRegisters *regs;
@@ -370,7 +370,7 @@ void serial_device_close(int fd)
 }
 
 /* Note: AVR UART module has now built-in flow control */
-int serial_device_set_config(int fd, SmpSerialFrameBaudrate baudrate,
+int smp_serial_device_set_config(int fd, SmpSerialFrameBaudrate baudrate,
         SmpSerialFrameParity parity, int flow_control)
 {
     UARTDevice *dev;
@@ -409,7 +409,7 @@ int serial_device_set_config(int fd, SmpSerialFrameBaudrate baudrate,
     return 0;
 }
 
-ssize_t serial_device_write(int fd, const void *buf, size_t size)
+ssize_t smp_serial_device_write(int fd, const void *buf, size_t size)
 {
     UARTDevice *device;
     UARTDeviceRegisters *regs;
@@ -433,7 +433,7 @@ ssize_t serial_device_write(int fd, const void *buf, size_t size)
     return ret;
 }
 
-ssize_t serial_device_read(int fd, void *buf, size_t size)
+ssize_t smp_serial_device_read(int fd, void *buf, size_t size)
 {
     UARTDevice *dev;
     size_t i;

@@ -27,7 +27,7 @@
 
 #include "libsmp-private.h"
 
-int serial_device_open(const char *device)
+int smp_serial_device_open(const char *device)
 {
     int fd;
 
@@ -61,12 +61,12 @@ int serial_device_open(const char *device)
     return fd;
 }
 
-void serial_device_close(int fd)
+void smp_serial_device_close(int fd)
 {
     close(fd);
 }
 
-int serial_device_set_config(int fd, SmpSerialFrameBaudrate baudrate,
+int smp_serial_device_set_config(int fd, SmpSerialFrameBaudrate baudrate,
         SmpSerialFrameParity parity, int flow_control)
 {
     int ret = -ENOSYS;
@@ -144,12 +144,12 @@ int serial_device_set_config(int fd, SmpSerialFrameBaudrate baudrate,
     return ret;
 }
 
-ssize_t serial_device_write(int fd, const void *buf, size_t size)
+ssize_t smp_serial_device_write(int fd, const void *buf, size_t size)
 {
     return write(fd, buf, size);
 }
 
-ssize_t serial_device_read(int fd, void *buf, size_t size)
+ssize_t smp_serial_device_read(int fd, void *buf, size_t size)
 {
     return read(fd, buf, size);
 }
