@@ -5,24 +5,26 @@ project('smp', 'c',
       'warning_level=2'
       ])
 
-add_project_arguments([
-    # warnings flags
-    '-Wno-unused-parameter',
-    '-Wformat-nonliteral',
-    '-Wformat-security',
-    '-Winit-self',
-    '-Wswitch-default',
-    '-Wuninitialized',
-    '-Wmaybe-uninitialized',
-    '-Wshadow',
-    '-Wframe-larger-than=4096',
-    '-Wpointer-arith',
-    '-Wundef',
-    '-Wcast-qual',
-    '-Wjump-misses-init',
-    '-Wmissing-prototypes',
-    '-Wno-type-limits'
-    ], language : 'c')
+if meson.get_compiler('c').get_id() == 'gcc'
+  add_project_arguments([
+      # warnings flags
+      '-Wno-unused-parameter',
+      '-Wformat-nonliteral',
+      '-Wformat-security',
+      '-Winit-self',
+      '-Wswitch-default',
+      '-Wuninitialized',
+      '-Wmaybe-uninitialized',
+      '-Wshadow',
+      '-Wframe-larger-than=4096',
+      '-Wpointer-arith',
+      '-Wundef',
+      '-Wcast-qual',
+      '-Wjump-misses-init',
+      '-Wmissing-prototypes',
+      '-Wno-type-limits'
+      ], language : 'c')
+endif
 
 libsmp_incdir = include_directories(['include'])
 
@@ -35,7 +37,11 @@ libsmp_src = [
 if host_machine.cpu_family() == 'atmega'
   libsmp_src += ['src/serial-device-avr.c']
 else
-  libsmp_src += ['src/serial-device-posix.c']
+  if host_machine.system() == 'windows'
+    libsmp_src += ['src/serial-device-win32.c']
+  else
+    libsmp_src += ['src/serial-device-posix.c']
+  endif
 endif
 
 ## Private configuration

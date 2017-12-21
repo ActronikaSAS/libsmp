@@ -27,6 +27,7 @@ $ ninja
 
 * GNU/Linux (Posix systems should works as well)
 * AVR (See notes)
+* Windows
 
 ## Notes about AVR port
 

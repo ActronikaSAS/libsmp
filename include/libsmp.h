@@ -37,6 +37,8 @@ extern "C" {
 #ifdef __AVR
 /* we don't have sys/types.h in avr-libc so define ssize_t ourself */
 typedef long ssize_t;
+#elif defined(_WIN32) || defined(_WIN64)
+typedef signed __int64 ssize_t;
 #endif
 
 /* Message */
@@ -203,10 +205,18 @@ typedef struct
     void *userdata;
 } SmpSerialFrameDecoder;
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+typedef struct
+{
+    HANDLE handle;
+} SmpSerialDevice;
+#else
 typedef struct
 {
     int fd;
 } SmpSerialDevice;
+#endif
 
 typedef struct
 {

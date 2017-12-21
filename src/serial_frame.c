@@ -243,11 +243,12 @@ int smp_serial_frame_set_config(SmpSerialFrameContext *ctx,
  *
  * @param[in] ctx the SmpSerialFrameContext
  *
- * @return the fd on success, a negative errno value otherwise.
+ * @return the fd (or a handle on Win32) on success, a negative errno value
+ * otherwise (or INVALID_HANDLER_VALUE on Win32).
  */
 intptr_t smp_serial_frame_get_fd(SmpSerialFrameContext *ctx)
 {
-    return_val_if_fail(ctx != NULL, -EINVAL);
+    return_val_if_fail(ctx != NULL, -1);
 
     return smp_serial_device_get_fd(&ctx->device);
 }
