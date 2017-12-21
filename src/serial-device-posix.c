@@ -27,11 +27,11 @@
 
 #include "libsmp-private.h"
 
-int smp_serial_device_open(const char *device)
+int smp_serial_device_open(SmpSerialDevice *device, const char *path)
 {
     int fd;
 
-    fd = open(device, O_RDWR | O_NONBLOCK);
+    fd = open(path, O_RDWR | O_NONBLOCK);
     if (fd < 0)
         return -errno;
 
@@ -58,25 +58,33 @@ int smp_serial_device_open(const char *device)
     }
 #endif
 
+    device->fd = fd;
+
     return fd;
 }
 
-void smp_serial_device_close(int fd)
+void smp_serial_device_close(SmpSerialDevice *device)
 {
-    close(fd);
+    close(device->fd);
 }
 
-int smp_serial_device_set_config(int fd, SmpSerialFrameBaudrate baudrate,
-        SmpSerialFrameParity parity, int flow_control)
+intptr_t smp_serial_device_get_fd(SmpSerialDevice *device)
+{
+    return (device->fd < 0) ? -EBADF : device->fd;
+}
+
+int smp_serial_device_set_config(SmpSerialDevice *device,
+        SmpSerialFrameBaudrate baudrate, SmpSerialFrameParity parity,
+        int flow_control)
 {
     int ret = -ENOSYS;
 
 #ifdef HAVE_TERMIOS_H
-    if (isatty(fd)) {
+    if (isatty(device->fd)) {
         struct termios term;
         speed_t speed;
 
-        ret = tcgetattr(fd, &term);
+        ret = tcgetattr(device->fd, &term);
         if (ret < 0)
             return -errno;
 
@@ -133,7 +141,7 @@ int smp_serial_device_set_config(int fd, SmpSerialFrameBaudrate baudrate,
             term.c_iflag &= ~IXOFF;
         }
 
-        ret = tcsetattr(fd, TCSANOW, &term);
+        ret = tcsetattr(device->fd, TCSANOW, &term);
         if (ret < 0)
             return -errno;
 
@@ -144,12 +152,13 @@ int smp_serial_device_set_config(int fd, SmpSerialFrameBaudrate baudrate,
     return ret;
 }
 
-ssize_t smp_serial_device_write(int fd, const void *buf, size_t size)
+ssize_t smp_serial_device_write(SmpSerialDevice *device, const void *buf,
+        size_t size)
 {
-    return write(fd, buf, size);
+    return write(device->fd, buf, size);
 }
 
-ssize_t smp_serial_device_read(int fd, void *buf, size_t size)
+ssize_t smp_serial_device_read(SmpSerialDevice *device, void *buf, size_t size)
 {
-    return read(fd, buf, size);
+    return read(device->fd, buf, size);
 }

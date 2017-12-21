@@ -205,9 +205,13 @@ typedef struct
 
 typedef struct
 {
-    SmpSerialFrameDecoder decoder;
+    int fd;
+} SmpSerialDevice;
 
-    int serial_fd;
+typedef struct
+{
+    SmpSerialFrameDecoder decoder;
+    SmpSerialDevice device;
 } SmpSerialFrameContext;
 
 int smp_serial_frame_init(SmpSerialFrameContext *ctx, const char *device,
@@ -218,7 +222,7 @@ int smp_serial_frame_set_config(SmpSerialFrameContext *ctx,
         SmpSerialFrameBaudrate baudrate, SmpSerialFrameParity parity,
         int flow_control);
 
-int smp_serial_frame_get_fd(SmpSerialFrameContext *ctx);
+intptr_t smp_serial_frame_get_fd(SmpSerialFrameContext *ctx);
 
 int smp_serial_frame_send(SmpSerialFrameContext *ctx, const uint8_t *buf,
         size_t size);

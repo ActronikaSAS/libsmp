@@ -34,11 +34,6 @@ extern "C" {
 #define EWOULDBLOCK EAGAIN  /* Operation would block */
 #define EBADMSG     74      /* Not a data message */
 
-static inline int smp_fd_is_valid(int fd)
-{
-    return (fd >= 0) ? 1 : 0;
-}
-
 #ifdef __cplusplus
 }
 #endif

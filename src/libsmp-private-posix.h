@@ -22,11 +22,6 @@
 extern "C" {
 #endif
 
-static inline int smp_fd_is_valid(int fd)
-{
-    return (fd >= 0) ? 1 : 0;
-}
-
 #ifdef __cplusplus
 }
 #endif

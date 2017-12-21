@@ -338,27 +338,30 @@ static int init_uart_device(UARTDevice *device)
 }
 
 /* SerialDevice API */
-int smp_serial_device_open(const char *device)
+int smp_serial_device_open(SmpSerialDevice *sdev, const char *path)
 {
     int ret = -ENOENT;
     uint8_t i;
 
     for (i = 0; i < avr_uart_n_devices; i++) {
-        if (strcmp(device, avr_uart_devices[i].name) == 0) {
+        if (strcmp(path, avr_uart_devices[i].name) == 0) {
             ret = init_uart_device(&avr_uart_devices[i]);
             break;
         }
     }
 
-    return (ret == 0) ? i : ret;
+    if (ret == 0)
+        sdev->fd = i;
+
+    return ret;
 }
 
-void smp_serial_device_close(int fd)
+void smp_serial_device_close(SmpSerialDevice *sdev)
 {
     UARTDevice *dev;
     UARTDeviceRegisters *regs;
 
-    dev = get_device_from_fd(fd);
+    dev = get_device_from_fd(sdev->fd);
     if (dev == NULL)
         return;
 
@@ -369,14 +372,20 @@ void smp_serial_device_close(int fd)
     *regs->csr_b &= ~(_BV(TXEN0));
 }
 
+intptr_t smp_serial_device_get_fd(SmpSerialDevice *sdev)
+{
+    return (sdev->fd < 0) ? -EBADF : sdev->fd;
+}
+
 /* Note: AVR UART module has now built-in flow control */
-int smp_serial_device_set_config(int fd, SmpSerialFrameBaudrate baudrate,
-        SmpSerialFrameParity parity, int flow_control)
+int smp_serial_device_set_config(SmpSerialDevice *sdev,
+        SmpSerialFrameBaudrate baudrate, SmpSerialFrameParity parity,
+        int flow_control)
 {
     UARTDevice *dev;
     UARTDeviceRegisters *regs;
 
-    dev = get_device_from_fd(fd);
+    dev = get_device_from_fd(sdev->fd);
     if (dev == NULL)
         return -ENOENT;
 
@@ -409,14 +418,14 @@ int smp_serial_device_set_config(int fd, SmpSerialFrameBaudrate baudrate,
     return 0;
 }
 
-ssize_t smp_serial_device_write(int fd, const void *buf, size_t size)
+ssize_t smp_serial_device_write(SmpSerialDevice *sdev, const void *buf, size_t size)
 {
     UARTDevice *device;
     UARTDeviceRegisters *regs;
     size_t i;
     ssize_t ret = 0;
 
-    device = get_device_from_fd(fd);
+    device = get_device_from_fd(sdev->fd);
     if (device == NULL)
         return -ENOENT;
 
@@ -433,12 +442,12 @@ ssize_t smp_serial_device_write(int fd, const void *buf, size_t size)
     return ret;
 }
 
-ssize_t smp_serial_device_read(int fd, void *buf, size_t size)
+ssize_t smp_serial_device_read(SmpSerialDevice *sdev, void *buf, size_t size)
 {
     UARTDevice *dev;
     size_t i;
 
-    dev = get_device_from_fd(fd);
+    dev = get_device_from_fd(sdev->fd);
     if (dev == NULL)
         return -ENOENT;
 

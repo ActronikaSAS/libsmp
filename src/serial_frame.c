@@ -191,13 +191,13 @@ int smp_serial_frame_init(SmpSerialFrameContext *ctx, const char *device,
     return_val_if_fail(cbs->new_frame != NULL, -EINVAL);
     return_val_if_fail(cbs->error != NULL, -EINVAL);
 
-    ctx->serial_fd = smp_serial_device_open(device);
-    if (ctx->serial_fd < 0)
-        return ctx->serial_fd;
+    ret = smp_serial_device_open(&ctx->device, device);
+    if (ret < 0)
+        return ret;
 
     ret = smp_serial_frame_decoder_init(&ctx->decoder, cbs, userdata);
     if (ret < 0) {
-        smp_serial_device_close(ctx->serial_fd);
+        smp_serial_device_close(&ctx->device);
         return ret;
     }
 
@@ -212,7 +212,7 @@ int smp_serial_frame_init(SmpSerialFrameContext *ctx, const char *device,
  */
 void smp_serial_frame_deinit(SmpSerialFrameContext *ctx)
 {
-    smp_serial_device_close(ctx->serial_fd);
+    smp_serial_device_close(&ctx->device);
 }
 
 /**
@@ -233,7 +233,7 @@ int smp_serial_frame_set_config(SmpSerialFrameContext *ctx,
 {
     return_val_if_fail(ctx != NULL, -EINVAL);
 
-    return smp_serial_device_set_config(ctx->serial_fd, baudrate, parity,
+    return smp_serial_device_set_config(&ctx->device, baudrate, parity,
             flow_control);
 }
 
@@ -245,11 +245,11 @@ int smp_serial_frame_set_config(SmpSerialFrameContext *ctx,
  *
  * @return the fd on success, a negative errno value otherwise.
  */
-int smp_serial_frame_get_fd(SmpSerialFrameContext *ctx)
+intptr_t smp_serial_frame_get_fd(SmpSerialFrameContext *ctx)
 {
     return_val_if_fail(ctx != NULL, -EINVAL);
 
-    return smp_fd_is_valid(ctx->serial_fd) ? ctx->serial_fd : -EBADF;
+    return smp_serial_device_get_fd(&ctx->device);
 }
 
 /**
@@ -297,7 +297,7 @@ int smp_serial_frame_send(SmpSerialFrameContext *ctx, const uint8_t *buf,
     txbuf[offset++] = END_BYTE;
 
     /* send it */
-    ret = smp_serial_device_write(ctx->serial_fd, txbuf, offset);
+    ret = smp_serial_device_write(&ctx->device, txbuf, offset);
     if (ret < 0)
         return ret;
 
@@ -323,7 +323,7 @@ int smp_serial_frame_process_recv_fd(SmpSerialFrameContext *ctx)
     char c;
 
     while (1) {
-        rbytes = smp_serial_device_read(ctx->serial_fd, &c, 1);
+        rbytes = smp_serial_device_read(&ctx->device, &c, 1);
         if (rbytes < 0) {
             if (errno == EWOULDBLOCK || errno == EAGAIN)
                 return 0;
