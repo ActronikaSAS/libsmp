@@ -22,6 +22,10 @@
 #include "libsmp.h"
 #include "libsmp-private.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int smp_serial_device_open(SmpSerialDevice *device, const char *path);
 void smp_serial_device_close(SmpSerialDevice *device);
 intptr_t smp_serial_device_get_fd(SmpSerialDevice *device);
@@ -31,5 +35,9 @@ int smp_serial_device_set_config(SmpSerialDevice *device,
 ssize_t smp_serial_device_write(SmpSerialDevice *device, const void *buf,
         size_t size);
 ssize_t smp_serial_device_read(SmpSerialDevice *device, void *buf, size_t size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

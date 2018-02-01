@@ -22,17 +22,39 @@
 extern "C" {
 #endif
 
+#ifndef ENOENT
 #define ENOENT      2       /* No such file or directory */
+#endif
+#ifndef E2BIG
 #define E2BIG       7       /* Argument list too long */
+#endif
+#ifndef EBADF
 #define EBADF       9       /* Bad file number */
+#endif
+#ifndef EAGAIN
 #define EAGAIN      11      /* Try again */
+#endif
+#ifndef ENOMEM
 #define ENOMEM      12      /* Out of memory */
+#endif
+#ifndef EFAULT
 #define EFAULT      14      /* Bad address */
+#endif
+#ifndef EBUSY
 #define EBUSY       16      /* Device or resource busy */
+#endif
+#ifndef EINVAL
 #define EINVAL      22      /* Invalid argument */
+#endif
+#ifndef ENOSYS
 #define ENOSYS      38      /* Invalid system call number */
+#endif
+#ifndef EWOULDBLOCK
 #define EWOULDBLOCK EAGAIN  /* Operation would block */
+#endif
+#ifndef EBADMSG
 #define EBADMSG     74      /* Not a data message */
+#endif
 
 #ifdef __cplusplus
 }

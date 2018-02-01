@@ -1,4 +1,4 @@
-project('smp', 'c',
+project('smp', 'c', 'cpp',
     version : '0.3.0',
     meson_version : '>= 0.38.0',
     default_options : [
@@ -33,15 +33,20 @@ libsmp_src = [
     'src/serial_frame.c'
     ]
 
-# select SerialDevice implementation depending on cpu family
-if host_machine.cpu_family() == 'atmega'
-  libsmp_src += ['src/serial-device-avr.c']
+# select SerialDevice implementation depending on cpu family and stack perferencies
+if get_option('use-arduino-lib')
+    libsmp_src += ['src/serial-device-arduino.cpp']
+    add_project_arguments(['-Wno-non-virtual-dtor'], language : 'cpp')
 else
-  if host_machine.system() == 'windows'
-    libsmp_src += ['src/serial-device-win32.c']
-  else
-    libsmp_src += ['src/serial-device-posix.c']
-  endif
+    if host_machine.cpu_family() == 'atmega'
+        libsmp_src += ['src/serial-device-avr.c']
+    else
+        if host_machine.system() == 'windows'
+            libsmp_src += ['src/serial-device-win32.c']
+        else
+            libsmp_src += ['src/serial-device-posix.c']
+        endif
+    endif
 endif
 
 ## Private configuration
@@ -81,10 +86,19 @@ configure_file(output : 'libsmp-config.h',
 
 libsmp_config_incdir = include_directories('.')
 
+if get_option('use-arduino-lib')
+    arduino_core_dep = subproject('arduino-core').get_variable('arduino_core_dep')
+    dependencies = [arduino_core_dep]
+else
+    dependencies = []
+endif
+
 libsmp = library('smp', libsmp_src,
-    include_directories : [libsmp_incdir, libsmp_config_incdir])
+    include_directories : [libsmp_incdir, libsmp_config_incdir],
+    dependencies : dependencies)
 
 libsmp_dep = declare_dependency(link_with : libsmp,
-    include_directories : [libsmp_incdir, libsmp_config_incdir])
+    include_directories : [libsmp_incdir, libsmp_config_incdir],
+    dependencies : dependencies)
 
 subdir('tests')

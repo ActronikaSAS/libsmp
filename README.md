@@ -47,3 +47,12 @@ device which is named 'serial0'.
 
 The returned fd on this platform is not a file descriptor at all so it shouldn't
 be use outside of smp functions.
+
+
+## Notes about Arduino
+
+It is possible to export this library for the Arduino IDE, but the settings will
+be global for all your Arduino sketches. You will set up these settings during
+the export. To perform the export, please run the python script
+`export-arduino-lib.py` located in the `scripts` subfolder with python 3
+(or higher). Then you can import the resulting zip file into your Arduino IDE.
