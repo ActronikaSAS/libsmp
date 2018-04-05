@@ -93,8 +93,15 @@ else
     dependencies = []
 endif
 
+libsmp_flags = []
+if get_option('default_library') == 'shared'
+  libsmp_flags += '-DSMP_EXPORT_API'
+endif
+
 libsmp = library('smp', libsmp_src,
     include_directories : [libsmp_incdir, libsmp_config_incdir],
+    c_args : libsmp_flags,
+    cpp_args : libsmp_flags,
     dependencies : dependencies)
 
 libsmp_dep = declare_dependency(link_with : libsmp,

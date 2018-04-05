@@ -34,6 +34,17 @@
 extern "C" {
 #endif
 
+/* Use to declare public API */
+#ifdef SMP_EXPORT_API
+#   ifdef _WIN32
+#       define SMP_API __declspec(dllexport)
+#   else
+#       define SMP_API __attribute__((visibility("default")))
+#   endif
+#else
+#   define SMP_API
+#endif
+
 #ifdef __AVR
 /* we don't have sys/types.h in avr-libc so define ssize_t ourself */
 typedef long ssize_t;
@@ -97,39 +108,39 @@ typedef struct
     SmpValue values[SMP_MESSAGE_MAX_VALUES];
 } SmpMessage;
 
-void smp_message_init(SmpMessage *msg, uint32_t msgid);
-int smp_message_init_from_buffer(SmpMessage *msg, const uint8_t *buffer,
-        size_t size);
-void smp_message_clear(SmpMessage *msg);
+SMP_API void smp_message_init(SmpMessage *msg, uint32_t msgid);
+SMP_API int smp_message_init_from_buffer(SmpMessage *msg, const uint8_t *buffer,
+                size_t size);
+SMP_API void smp_message_clear(SmpMessage *msg);
 
-ssize_t smp_message_encode(SmpMessage *msg, uint8_t *buffer, size_t size);
+SMP_API ssize_t smp_message_encode(SmpMessage *msg, uint8_t *buffer, size_t size);
 
-uint32_t smp_message_get_msgid(SmpMessage *msg);
-int smp_message_n_args(SmpMessage *msg);
+SMP_API uint32_t smp_message_get_msgid(SmpMessage *msg);
+SMP_API int smp_message_n_args(SmpMessage *msg);
 
-int smp_message_get(SmpMessage *msg, int index, ...);
-int smp_message_get_value(SmpMessage *msg, int index, SmpValue *value);
-int smp_message_get_uint8(SmpMessage *msg, int index, uint8_t *value);
-int smp_message_get_int8(SmpMessage *msg, int index, int8_t *value);
-int smp_message_get_uint16(SmpMessage *msg, int index, uint16_t *value);
-int smp_message_get_int16(SmpMessage *msg, int index, int16_t *value);
-int smp_message_get_uint32(SmpMessage *msg, int index, uint32_t *value);
-int smp_message_get_int32(SmpMessage *msg, int index, int32_t *value);
-int smp_message_get_uint64(SmpMessage *msg, int index, uint64_t *value);
-int smp_message_get_int64(SmpMessage *msg, int index, int64_t *value);
-int smp_message_get_cstring(SmpMessage *msg, int index, const char **value);
+SMP_API int smp_message_get(SmpMessage *msg, int index, ...);
+SMP_API int smp_message_get_value(SmpMessage *msg, int index, SmpValue *value);
+SMP_API int smp_message_get_uint8(SmpMessage *msg, int index, uint8_t *value);
+SMP_API int smp_message_get_int8(SmpMessage *msg, int index, int8_t *value);
+SMP_API int smp_message_get_uint16(SmpMessage *msg, int index, uint16_t *value);
+SMP_API int smp_message_get_int16(SmpMessage *msg, int index, int16_t *value);
+SMP_API int smp_message_get_uint32(SmpMessage *msg, int index, uint32_t *value);
+SMP_API int smp_message_get_int32(SmpMessage *msg, int index, int32_t *value);
+SMP_API int smp_message_get_uint64(SmpMessage *msg, int index, uint64_t *value);
+SMP_API int smp_message_get_int64(SmpMessage *msg, int index, int64_t *value);
+SMP_API int smp_message_get_cstring(SmpMessage *msg, int index, const char **value);
 
-int smp_message_set(SmpMessage *msg, int index, ...);
-int smp_message_set_value(SmpMessage *msg, int index, const SmpValue *value);
-int smp_message_set_uint8(SmpMessage *msg, int index, uint8_t value);
-int smp_message_set_int8(SmpMessage *msg, int index, int8_t value);
-int smp_message_set_uint16(SmpMessage *msg, int index, uint16_t value);
-int smp_message_set_int16(SmpMessage *msg, int index, int16_t value);
-int smp_message_set_uint32(SmpMessage *msg, int index, uint32_t value);
-int smp_message_set_int32(SmpMessage *msg, int index, int32_t value);
-int smp_message_set_uint64(SmpMessage *msg, int index, uint64_t value);
-int smp_message_set_int64(SmpMessage *msg, int index, int64_t value);
-int smp_message_set_cstring(SmpMessage *msg, int index, const char *value);
+SMP_API int smp_message_set(SmpMessage *msg, int index, ...);
+SMP_API int smp_message_set_value(SmpMessage *msg, int index, const SmpValue *value);
+SMP_API int smp_message_set_uint8(SmpMessage *msg, int index, uint8_t value);
+SMP_API int smp_message_set_int8(SmpMessage *msg, int index, int8_t value);
+SMP_API int smp_message_set_uint16(SmpMessage *msg, int index, uint16_t value);
+SMP_API int smp_message_set_int16(SmpMessage *msg, int index, int16_t value);
+SMP_API int smp_message_set_uint32(SmpMessage *msg, int index, uint32_t value);
+SMP_API int smp_message_set_int32(SmpMessage *msg, int index, int32_t value);
+SMP_API int smp_message_set_uint64(SmpMessage *msg, int index, uint64_t value);
+SMP_API int smp_message_set_int64(SmpMessage *msg, int index, int64_t value);
+SMP_API int smp_message_set_cstring(SmpMessage *msg, int index, const char *value);
 
 /* Serial frame API */
 
@@ -224,19 +235,20 @@ typedef struct
     SmpSerialDevice device;
 } SmpSerialFrameContext;
 
-int smp_serial_frame_init(SmpSerialFrameContext *ctx, const char *device,
-        const SmpSerialFrameDecoderCallbacks *cbs, void *userdata);
-void smp_serial_frame_deinit(SmpSerialFrameContext *ctx);
+SMP_API int smp_serial_frame_init(SmpSerialFrameContext *ctx,
+                const char *device, const SmpSerialFrameDecoderCallbacks *cbs,
+                void *userdata);
+SMP_API void smp_serial_frame_deinit(SmpSerialFrameContext *ctx);
 
-int smp_serial_frame_set_config(SmpSerialFrameContext *ctx,
-        SmpSerialFrameBaudrate baudrate, SmpSerialFrameParity parity,
-        int flow_control);
+SMP_API int smp_serial_frame_set_config(SmpSerialFrameContext *ctx,
+                SmpSerialFrameBaudrate baudrate, SmpSerialFrameParity parity,
+                int flow_control);
 
-intptr_t smp_serial_frame_get_fd(SmpSerialFrameContext *ctx);
+SMP_API intptr_t smp_serial_frame_get_fd(SmpSerialFrameContext *ctx);
 
-int smp_serial_frame_send(SmpSerialFrameContext *ctx, const uint8_t *buf,
-        size_t size);
-int smp_serial_frame_process_recv_fd(SmpSerialFrameContext *ctx);
+SMP_API int smp_serial_frame_send(SmpSerialFrameContext *ctx,
+                const uint8_t *buf, size_t size);
+SMP_API int smp_serial_frame_process_recv_fd(SmpSerialFrameContext *ctx);
 
 #ifdef __cplusplus
 }
