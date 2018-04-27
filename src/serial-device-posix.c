@@ -155,10 +155,18 @@ int smp_serial_device_set_config(SmpSerialDevice *device,
 ssize_t smp_serial_device_write(SmpSerialDevice *device, const void *buf,
         size_t size)
 {
-    return write(device->fd, buf, size);
+    ssize_t ret;
+
+    ret = write(device->fd, buf, size);
+
+    return (ret < 0) ? -errno : ret;
 }
 
 ssize_t smp_serial_device_read(SmpSerialDevice *device, void *buf, size_t size)
 {
-    return read(device->fd, buf, size);
+    ssize_t ret;
+
+    ret = read(device->fd, buf, size);
+
+    return (ret < 0) ? -errno : ret;
 }
