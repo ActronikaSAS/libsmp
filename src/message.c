@@ -57,7 +57,7 @@ DEFINE_WRITE_FUNC(uint32);
 DEFINE_WRITE_FUNC(int64);
 DEFINE_WRITE_FUNC(uint64);
 
-/* warning: for string type, it returns the mininum payload size */
+/* warning: for string/raw types, it returns the mininum payload size */
 static size_t smp_type_size(SmpType type)
 {
     switch (type) {
@@ -75,6 +75,8 @@ static size_t smp_type_size(SmpType type)
             return 8;
         case SMP_TYPE_STRING:
             return 3;
+        case SMP_TYPE_RAW:
+            return 2;
         default:
             break;
     }
@@ -86,16 +88,27 @@ static size_t smp_value_compute_size(const SmpValue *value)
 {
     size_t size;
 
-    if (value->type == SMP_TYPE_STRING) {
-        /* size + nul byte */
-        size = 3;
+    switch (value->type) {
+        case SMP_TYPE_STRING:
+            /* size + nul byte */
+            size = 3;
 
-        if (value->value.cstring != NULL) {
-            size += strlen(value->value.cstring);
-        }
-    } else {
-        /* scalar types have known size */
-        size = smp_type_size(value->type);
+            if (value->value.cstring != NULL)
+                size += strlen(value->value.cstring);
+
+            break;
+        case SMP_TYPE_RAW:
+            /* raw data size */
+            size = 2;
+
+            if (value->value.craw != NULL)
+                size += value->value.craw_size;
+
+            break;
+        default:
+            /* scalar types have known size */
+            size = smp_type_size(value->type);
+            break;
     }
 
     return size;
@@ -119,6 +132,25 @@ static const char *smp_message_decode_string(const uint8_t *buffer, size_t size)
         return NULL;
 
     return ((const char *) buffer) + 2;
+}
+
+static int smp_message_decode_raw(SmpValue *value, const uint8_t *buffer,
+        size_t size)
+{
+    size_t rawsize;
+
+    if (size < 2)
+        return -EBADMSG;
+
+    rawsize = smp_read_uint16(buffer);
+
+    if (size < 2 + rawsize)
+        return -EBADMSG;
+
+    value->value.craw = buffer + 2;
+    value->value.craw_size = rawsize;
+
+    return 0;
 }
 
 static ssize_t smp_message_decode_value(SmpValue *value, const uint8_t *buffer,
@@ -167,6 +199,13 @@ static ssize_t smp_message_decode_value(SmpValue *value, const uint8_t *buffer,
             value->value.cstring = smp_message_decode_string(buffer, size - 1);
 
             /* recalculate argsize with string size */
+            argsize = 1 + smp_value_compute_size(value);
+            break;
+        case SMP_TYPE_RAW:
+            argsize = smp_message_decode_raw(value, buffer, size - 1);
+            if (argsize < 0)
+                break;
+
             argsize = 1 + smp_value_compute_size(value);
             break;
         default:
@@ -220,6 +259,15 @@ static ssize_t smp_message_encode_value(const SmpValue *value, uint8_t *buffer)
                 buffer[2 + len] = '\0';
                 break;
             }
+            case SMP_TYPE_RAW: {
+                if (value->value.craw_size > UINT16_MAX)
+                    return 0;
+
+                /* size | data */
+                smp_write_uint16(buffer, value->value.craw_size);
+                memcpy(buffer + 2, value->value.craw, value->value.craw_size);
+                break;
+            }
             default:
                 return 0;
     }
@@ -263,8 +311,9 @@ void smp_message_init(SmpMessage *msg, uint32_t msgid)
  * \ingroup message
  * Initialize a SmpMessage from the given buffer. Buffer will be parsed to
  * populate the message.
- * Warning: if message contains strings, the buffer shall not be overwritten or
- * freed as long as message exist as strings only points to buffer.
+ * Warning: if message contains strings or raw data, the buffer shall not be
+ * overwritten or freed as long as message exist as strings only points to
+ * buffer.
  *
  * @param[in] msg a SmpMessage
  * @param[in] buffer the buffer to parse
@@ -497,6 +546,15 @@ int smp_message_get(SmpMessage *msg, int index, ...)
                 break;
             }
 
+            case SMP_TYPE_RAW: {
+                const uint8_t **ptr = va_arg(ap, const uint8_t **);
+                size_t *psize = va_arg(ap, size_t *);
+
+                *ptr = msg->values[index].value.craw;
+                *psize = msg->values[index].value.craw_size;
+                break;
+            }
+
             default:
                 ret = -EBADF;
                 goto done;
@@ -694,6 +752,26 @@ int smp_message_get_cstring(SmpMessage *msg, int index, const char **value)
 
 /**
  * \ingroup message
+ * Get the message raw buffer value pointed by index and store it into value.
+ * Caller is responsible to ensure that the value at index has the correct
+ * type.
+ * The returned value is valid as long as the message exist.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] raw a pointer to hold the result
+ * @param[in] size the size of the raw data
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
+int smp_message_get_craw(SmpMessage *msg, int index, const uint8_t **raw,
+        size_t *size)
+{
+    return smp_message_get(msg, index, SMP_TYPE_RAW, raw, size, -1);
+}
+
+/**
+ * \ingroup message
  * Set arguments in the message. Variable arguments should be the index
  * of the message argument, type of the argument as a SmpType and pointer to
  * a location to store the return value. The last variable should be set to -1.
@@ -746,6 +824,10 @@ int smp_message_set(SmpMessage *msg, int index, ...)
                 break;
             case SMP_TYPE_STRING:
                 val.value.cstring = va_arg(ap, const char *);
+                break;
+            case SMP_TYPE_RAW:
+                val.value.craw = va_arg(ap, const uint8_t *);
+                val.value.craw_size = va_arg(ap, size_t);
                 break;
             default:
                 break;
@@ -922,4 +1004,22 @@ int smp_message_set_int64(SmpMessage *msg, int index, int64_t value)
 int smp_message_set_cstring(SmpMessage *msg, int index, const char *value)
 {
     return smp_message_set(msg, index, SMP_TYPE_STRING, value, -1);
+}
+
+/**
+ * \ingroup message
+ * Set the message value pointed by index to given raw data.
+ * Warning: data is not copied so it shall exist as long as message exist.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] raw the raw data to set
+ * @param[in] size the raw data size
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
+int smp_message_set_craw(SmpMessage *msg, int index, const uint8_t *raw,
+        size_t size)
+{
+    return smp_message_set(msg, index, SMP_TYPE_RAW, raw, size, -1);
 }

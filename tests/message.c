@@ -19,6 +19,8 @@
 #include <libsmp.h>
 #include "tests.h"
 
+#define SMP_N_ELEMENTS(arr) (sizeof((arr))/sizeof((arr)[0]))
+
 static void setup_test_message_get(SmpMessage *msg)
 {
     smp_message_init(msg, 33);
@@ -43,6 +45,11 @@ static void setup_test_message_get(SmpMessage *msg)
     msg->values[8].value.cstring = "Hello world !";
     msg->values[9].type = SMP_TYPE_UINT8;
     msg->values[9].value.i64 = 0;
+
+    /* for our test we process our raw data as a string */
+    msg->values[10].type = SMP_TYPE_RAW;
+    msg->values[10].value.craw = (uint8_t *) "rawdata";
+    msg->values[10].value.craw_size = 8;
 }
 
 static void test_smp_message_get(void)
@@ -58,6 +65,8 @@ static void test_smp_message_get(void)
     uint64_t u64;
     int64_t i64;
     const char *str;
+    const uint8_t *raw;
+    size_t rawsize;
 
     setup_test_message_get(&msg);
 
@@ -94,6 +103,7 @@ static void test_smp_message_get(void)
             6, SMP_TYPE_UINT64, &u64,
             7, SMP_TYPE_INT64, &i64,
             8, SMP_TYPE_STRING, &str,
+            10, SMP_TYPE_RAW, &raw, &rawsize,
             -1);
     CU_ASSERT_EQUAL(ret, 0);
     CU_ASSERT_EQUAL(u8, 33);
@@ -105,6 +115,8 @@ static void test_smp_message_get(void)
     CU_ASSERT_EQUAL(u64, 423535346);
     CU_ASSERT_EQUAL(i64, -453126);
     CU_ASSERT_STRING_EQUAL(str, "Hello world !");
+    CU_ASSERT_STRING_EQUAL(raw, "rawdata");
+    CU_ASSERT_EQUAL(rawsize, 8);
 
     smp_message_clear(&msg);
 }
@@ -180,6 +192,13 @@ static void test_smp_message_get_value(void)
     CU_ASSERT_EQUAL(ret, 0);
     CU_ASSERT_EQUAL(value.type, SMP_TYPE_STRING);
     CU_ASSERT_EQUAL(value.value.cstring, "Hello world !");
+
+    memset(&value, 0, sizeof(value));
+    ret = smp_message_get_value(&msg, 10, &value);
+    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL(value.type, SMP_TYPE_RAW);
+    CU_ASSERT_EQUAL(value.value.craw, "rawdata");
+    CU_ASSERT_EQUAL(value.value.craw_size, 8);
 }
 
 #define DEFINE_GET_TYPE_TEST_FUNC(type, index, expected_value) \
@@ -244,6 +263,34 @@ static void test_smp_message_get_cstring(void)
     CU_ASSERT_STRING_EQUAL(str, "Hello world !");
 }
 
+static void test_smp_message_get_craw(void)
+{
+    SmpMessage msg;
+    int ret;
+    const uint8_t *raw;
+    size_t size;
+
+    setup_test_message_get(&msg);
+
+    /* out of bound index should fail */
+    ret = smp_message_get_craw(&msg, SMP_MESSAGE_MAX_VALUES + 10, &raw, &size);
+    CU_ASSERT_EQUAL(ret, -ENOENT);
+
+    /* fail if value is not initialized, ie NONE */
+    ret = smp_message_get_craw(&msg, SMP_MESSAGE_MAX_VALUES - 1, &raw, &size);
+    CU_ASSERT_EQUAL(ret, -EBADF);
+
+    /* fail if we have the wrong type */
+    ret = smp_message_get_craw(&msg, 0, &raw, &size);
+    CU_ASSERT_EQUAL(ret, -EBADF);
+
+    /* good */
+    ret = smp_message_get_craw(&msg, 10, &raw, &size);
+    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_STRING_EQUAL(raw, "rawdata");
+    CU_ASSERT_EQUAL(size, 8);
+}
+
 static void test_smp_message_set(void)
 {
     SmpMessage msg;
@@ -300,6 +347,7 @@ static void test_smp_message_set(void)
             6, SMP_TYPE_UINT64, (uint64_t) 1 << 55,
             7, SMP_TYPE_INT64, -((int64_t) 1 << 33),
             8, SMP_TYPE_STRING, "Working",
+            9, SMP_TYPE_RAW, "RawWorking", 11,
             -1);
     CU_ASSERT_EQUAL(ret, 0);
     CU_ASSERT_EQUAL(msg.values[0].type, SMP_TYPE_UINT8);
@@ -320,6 +368,9 @@ static void test_smp_message_set(void)
     CU_ASSERT_EQUAL(msg.values[7].value.i64, -((int64_t) 1 << 33));
     CU_ASSERT_EQUAL(msg.values[8].type, SMP_TYPE_STRING);
     CU_ASSERT_STRING_EQUAL(msg.values[8].value.cstring, "Working");
+    CU_ASSERT_EQUAL(msg.values[9].type, SMP_TYPE_RAW);
+    CU_ASSERT_EQUAL(msg.values[9].value.craw, "RawWorking");
+    CU_ASSERT_EQUAL(msg.values[9].value.craw_size, 11);
     smp_message_clear(&msg);
 }
 
@@ -403,12 +454,38 @@ static void test_smp_message_set_cstring(void)
     smp_message_clear(&msg);
 }
 
+static void test_smp_message_set_craw(void)
+{
+    SmpMessage msg;
+    int ret;
+
+    /* out of bound index should fail */
+    smp_message_init(&msg, 33);
+    ret = smp_message_set_craw(&msg, SMP_MESSAGE_MAX_VALUES + 10,
+            (uint8_t *) "foo", 4);
+    CU_ASSERT_EQUAL(ret, -ENOENT);
+    smp_message_clear(&msg);
+
+    /* good */
+    smp_message_init(&msg, 33);
+    ret = smp_message_set_craw(&msg, 0, (uint8_t *) "foobar", 7);
+    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL(msg.values[0].type, SMP_TYPE_RAW);
+    CU_ASSERT_STRING_EQUAL(msg.values[0].value.craw, "foobar");
+    CU_ASSERT_EQUAL(msg.values[0].value.craw_size, 7);
+    smp_message_clear(&msg);
+}
+
 static void test_smp_message_encode(void)
 {
     SmpMessage msg;
     uint8_t buffer[1024];
     int ret;
     const char *str = "Little string to check string works";
+    const uint8_t rawdata[] = { 0x56, 0xff, 0x42, 0xa5, 0xbd, 0x16, 0x0f, 0x99,
+        0x8c, 0x65, 0xa4, 0x88, 0x72 };
+    size_t rawdata_len = SMP_N_ELEMENTS(rawdata);
+    size_t i;
 
     smp_message_init(&msg, 42);
     smp_message_set(&msg,
@@ -421,6 +498,7 @@ static void test_smp_message_encode(void)
             6, SMP_TYPE_UINT64, (uint64_t) 1 << 55,
             7, SMP_TYPE_INT64, -((int64_t) 1 << 33),
             8, SMP_TYPE_STRING, str,
+            9, SMP_TYPE_RAW, rawdata, rawdata_len,
             -1);
 
     /* encoding in a too small buffer should fail */
@@ -429,10 +507,11 @@ static void test_smp_message_encode(void)
 
     /* This should work and we should get the following payload */
     ret = smp_message_encode(&msg, buffer, sizeof(buffer));
-    CU_ASSERT_EQUAL(ret, 46 + 4 + strlen(str));
+    CU_ASSERT_EQUAL(ret, 46 + 4 + strlen(str) + (3 + rawdata_len));
 
     CU_ASSERT_EQUAL(*((uint32_t *)buffer), 42);
-    CU_ASSERT_EQUAL(*((uint32_t *)(buffer + 4)), 38 + 4 + strlen(str));
+    CU_ASSERT_EQUAL(*((uint32_t *)(buffer + 4)), 38 + 4 + strlen(str)
+            + (3 + rawdata_len));
     CU_ASSERT_EQUAL(*(buffer + 8), SMP_TYPE_UINT8);
     CU_ASSERT_EQUAL(*(buffer + 9), 33);
     CU_ASSERT_EQUAL(*(buffer + 10), SMP_TYPE_INT8);
@@ -453,6 +532,13 @@ static void test_smp_message_encode(void)
     CU_ASSERT_EQUAL(*((uint16_t *)(buffer + 47)), strlen(str) + 1);
     CU_ASSERT_STRING_EQUAL(buffer + 49, str);
     CU_ASSERT_EQUAL(*(buffer + 49 + strlen(str)), '\0');
+    CU_ASSERT_EQUAL(*(buffer + 50 + strlen(str)), SMP_TYPE_RAW);
+    CU_ASSERT_EQUAL(*(buffer + 51 + strlen(str)), rawdata_len);
+
+    for (i = 0; i < rawdata_len; i++) {
+        if (*(buffer + 53 + strlen(str) + i) != rawdata[i])
+            CU_FAIL_FATAL("rawdata value mismatch");
+    }
 
     smp_message_clear(&msg);
 }
@@ -494,7 +580,10 @@ static void test_smp_message_init_from_buffer(void)
         0x09, 0x06, 0x00, 'h', 'e', 'l', 'l', 'o', '\0',
 
         0x04, 0x2a, 0x80,             /* int16_t = -32726 */
-        0x06, 0x2a, 0x80, 0xff, 0xff  /* int32_t = -32726 */
+        0x06, 0x2a, 0x80, 0xff, 0xff, /* int32_t = -32726 */
+
+        /* raw data: 0x42 0x66 0x36 0xa5 0xff */
+        0x10, 0x05, 0x00, 0x42, 0x66, 0x36, 0xa5, 0xff
     };
 
     /* a too small buffer should return in error */
@@ -530,6 +619,13 @@ static void test_smp_message_init_from_buffer(void)
     CU_ASSERT_EQUAL(msg.values[7].value.i16, -32726);
     CU_ASSERT_EQUAL(msg.values[8].type, SMP_TYPE_INT32);
     CU_ASSERT_EQUAL(msg.values[8].value.i32, -32726);
+    CU_ASSERT_EQUAL(msg.values[9].type, SMP_TYPE_RAW);
+    CU_ASSERT_EQUAL(msg.values[9].value.craw_size, 5);
+    CU_ASSERT_EQUAL(msg.values[9].value.craw[0], 0x42);
+    CU_ASSERT_EQUAL(msg.values[9].value.craw[1], 0x66);
+    CU_ASSERT_EQUAL(msg.values[9].value.craw[2], 0x36);
+    CU_ASSERT_EQUAL(msg.values[9].value.craw[3], 0xa5);
+    CU_ASSERT_EQUAL(msg.values[9].value.craw[4], 0xff);
 
     smp_message_clear(&msg);
 
@@ -605,6 +701,7 @@ static Test tests[] = {
     { "test_smp_message_get_uint64", test_smp_message_get_uint64 },
     { "test_smp_message_get_int64", test_smp_message_get_int64 },
     { "test_smp_message_get_cstring", test_smp_message_get_cstring },
+    { "test_smp_message_get_craw", test_smp_message_get_craw },
     { "test_smp_message_set", test_smp_message_set },
     { "test_smp_message_set_value", test_smp_message_set_value },
     { "test_smp_message_set_uint8", test_smp_message_set_uint8 },
@@ -616,6 +713,7 @@ static Test tests[] = {
     { "test_smp_message_set_uint64", test_smp_message_set_uint64 },
     { "test_smp_message_set_int64", test_smp_message_set_int64 },
     { "test_smp_message_set_cstring", test_smp_message_set_cstring },
+    { "test_smp_message_set_craw", test_smp_message_set_craw },
     { "test_smp_message_encode", test_smp_message_encode },
     { "test_smp_message_init_from_buffer", test_smp_message_init_from_buffer },
     { NULL, NULL }

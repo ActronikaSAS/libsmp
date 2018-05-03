@@ -56,6 +56,7 @@ Argument description:
         * 0x07: U64: 64-bits unsigned integer, little-endian, size: 8 byte
         * 0x08: I64: 64-bits signed integer, little-endian, size: 8 byte
         * 0x09: STR: C string nul-terminated.
+        * 0x10: RAW: Raw buffer
 
     DATA: N bytes: encoded argument
 
@@ -72,3 +73,12 @@ String argument description:
     SIZE: 2 byte: string size including nul-character, little-endian encoded
     STR[]: N bytes: string data
     0x00: nul character
+
+
+Raw argument description:
+
+    |          RAW         |
+    ------------------------
+    | 0x10 | SIZE | DATA[] |
+    ------------------------
+    0      1      3       3+N
