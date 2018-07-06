@@ -57,6 +57,50 @@ DEFINE_WRITE_FUNC(uint32);
 DEFINE_WRITE_FUNC(int64);
 DEFINE_WRITE_FUNC(uint64);
 
+static void smp_write_f32(uint8_t *data, float value)
+{
+    union {
+        float f32;
+        uint32_t u32;
+    } v;
+    v.f32 = value;
+
+    smp_write_uint32(data, v.u32);
+}
+
+static float smp_read_f32(const uint8_t *data)
+{
+    union {
+        float f32;
+        uint32_t u32;
+    } v;
+
+    v.u32 = smp_read_uint32(data);
+    return v.f32;
+}
+
+static void smp_write_f64(uint8_t *data, double value)
+{
+    union {
+        double f64;
+        uint64_t u64;
+    } v;
+    v.f64 = value;
+
+    smp_write_uint64(data, v.u64);
+}
+
+static double smp_read_f64(const uint8_t *data)
+{
+    union {
+        double f64;
+        uint64_t u64;
+    } v;
+
+    v.u64 = smp_read_uint64(data);
+    return v.f64;
+}
+
 /* warning: for string/raw types, it returns the mininum payload size */
 static size_t smp_type_size(SmpType type)
 {
@@ -69,9 +113,11 @@ static size_t smp_type_size(SmpType type)
             return 2;
         case SMP_TYPE_INT32:
         case SMP_TYPE_UINT32:
+        case SMP_TYPE_F32:
             return 4;
         case SMP_TYPE_INT64:
         case SMP_TYPE_UINT64:
+        case SMP_TYPE_F64:
             return 8;
         case SMP_TYPE_STRING:
             return 3;
@@ -208,6 +254,12 @@ static ssize_t smp_message_decode_value(SmpValue *value, const uint8_t *buffer,
 
             argsize = 1 + smp_value_compute_size(value);
             break;
+        case SMP_TYPE_F32:
+            value->value.f32 = smp_read_f32(buffer);
+            break;
+        case SMP_TYPE_F64:
+            value->value.f64 = smp_read_f64(buffer);
+            break;
         default:
             return -EBADMSG;
     }
@@ -268,6 +320,12 @@ static ssize_t smp_message_encode_value(const SmpValue *value, uint8_t *buffer)
                 memcpy(buffer + 2, value->value.craw, value->value.craw_size);
                 break;
             }
+            case SMP_TYPE_F32:
+                smp_write_f32(buffer, value->value.f32);
+                break;
+            case SMP_TYPE_F64:
+                smp_write_f64(buffer, value->value.f64);
+                break;
             default:
                 return 0;
     }
@@ -555,6 +613,20 @@ int smp_message_get(SmpMessage *msg, int index, ...)
                 break;
             }
 
+            case SMP_TYPE_F32: {
+                float *ptr = va_arg(ap, float *);
+
+                *ptr = msg->values[index].value.f32;
+                break;
+            }
+
+            case SMP_TYPE_F64: {
+                double *ptr = va_arg(ap, double *);
+
+                *ptr = msg->values[index].value.f64;
+                break;
+            }
+
             default:
                 ret = -EBADF;
                 goto done;
@@ -734,6 +806,40 @@ int smp_message_get_int64(SmpMessage *msg, int index, int64_t *value)
 
 /**
  * \ingroup message
+ * Get the message float value pointed by index and store it into value.
+ * Caller is responsible to ensure that the value at index has the correct
+ * type.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value a pointer to a float to hold the result
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
+int smp_message_get_float(SmpMessage *msg, int index, float *value)
+{
+    return smp_message_get(msg, index, SMP_TYPE_F32, value, -1);
+}
+
+/**
+ * \ingroup message
+ * Get the message double value pointed by index and store it into value.
+ * Caller is responsible to ensure that the value at index has the correct
+ * type.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value a pointer to a double to hold the result
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
+int smp_message_get_double(SmpMessage *msg, int index, double *value)
+{
+    return smp_message_get(msg, index, SMP_TYPE_F64, value, -1);
+}
+
+/**
+ * \ingroup message
  * Get the message string value pointed by index and store it into value.
  * Caller is responsible to ensure that the value at index has the correct
  * type.
@@ -828,6 +934,12 @@ int smp_message_set(SmpMessage *msg, int index, ...)
             case SMP_TYPE_RAW:
                 val.value.craw = va_arg(ap, const uint8_t *);
                 val.value.craw_size = va_arg(ap, size_t);
+                break;
+            case SMP_TYPE_F32:
+                val.value.f32 = va_arg(ap, double);
+                break;
+            case SMP_TYPE_F64:
+                val.value.f64 = va_arg(ap, double);
                 break;
             default:
                 break;
@@ -988,6 +1100,36 @@ int smp_message_set_uint64(SmpMessage *msg, int index, uint64_t value)
 int smp_message_set_int64(SmpMessage *msg, int index, int64_t value)
 {
     return smp_message_set(msg, index, SMP_TYPE_INT64, value, -1);
+}
+
+/**
+ * \ingroup message
+ * Set the message value pointed by index to given float value.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value the float to set
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
+int smp_message_set_float(SmpMessage *msg, int index, float value)
+{
+    return smp_message_set(msg, index, SMP_TYPE_F32, value, -1);
+}
+
+/**
+ * \ingroup message
+ * Set the message value pointed by index to given double value.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index index of the value
+ * @param[in] value the double to set
+ *
+ * @return 0 on success, a negative errno value on error.
+ */
+int smp_message_set_double(SmpMessage *msg, int index, double value)
+{
+    return smp_message_set(msg, index, SMP_TYPE_F64, value, -1);
 }
 
 /**

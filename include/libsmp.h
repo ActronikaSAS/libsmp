@@ -70,6 +70,8 @@ typedef enum
     SMP_TYPE_UINT64 = 0x07,
     SMP_TYPE_INT64 = 0x08,
     SMP_TYPE_STRING = 0x09,
+    SMP_TYPE_F32 = 0x0a,
+    SMP_TYPE_F64 = 0x0b,
     SMP_TYPE_RAW = 0x10,
 
     SMP_TYPE_MAX = 0x7f
@@ -92,6 +94,9 @@ typedef struct
         int16_t i16;
         int32_t i32;
         int64_t i64;
+
+        float f32;
+        double f64;
 
         const char *cstring;
 
@@ -134,6 +139,8 @@ SMP_API int smp_message_get_uint32(SmpMessage *msg, int index, uint32_t *value);
 SMP_API int smp_message_get_int32(SmpMessage *msg, int index, int32_t *value);
 SMP_API int smp_message_get_uint64(SmpMessage *msg, int index, uint64_t *value);
 SMP_API int smp_message_get_int64(SmpMessage *msg, int index, int64_t *value);
+SMP_API int smp_message_get_float(SmpMessage *msg, int index, float *value);
+SMP_API int smp_message_get_double(SmpMessage *msg, int index, double *value);
 SMP_API int smp_message_get_cstring(SmpMessage *msg, int index, const char **value);
 SMP_API int smp_message_get_craw(SmpMessage *msg, int index, const uint8_t **raw,
                 size_t *size);
@@ -148,6 +155,8 @@ SMP_API int smp_message_set_uint32(SmpMessage *msg, int index, uint32_t value);
 SMP_API int smp_message_set_int32(SmpMessage *msg, int index, int32_t value);
 SMP_API int smp_message_set_uint64(SmpMessage *msg, int index, uint64_t value);
 SMP_API int smp_message_set_int64(SmpMessage *msg, int index, int64_t value);
+SMP_API int smp_message_set_float(SmpMessage *msg, int index, float value);
+SMP_API int smp_message_set_double(SmpMessage *msg, int index, double value);
 SMP_API int smp_message_set_cstring(SmpMessage *msg, int index, const char *value);
 SMP_API int smp_message_set_craw(SmpMessage *msg, int index, const uint8_t *raw,
                 size_t size);

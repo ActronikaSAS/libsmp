@@ -56,6 +56,8 @@ Argument description:
         * 0x07: U64: 64-bits unsigned integer, little-endian, size: 8 byte
         * 0x08: I64: 64-bits signed integer, little-endian, size: 8 byte
         * 0x09: STR: C string nul-terminated.
+        * 0x0a: F32: IEEE.754 float, little-endian, size: 4 byte
+        * 0x0b: F64: IEEE.754 double, little-endian, size: 8 bytes
         * 0x10: RAW: Raw buffer
 
     DATA: N bytes: encoded argument
