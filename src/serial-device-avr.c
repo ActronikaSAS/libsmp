@@ -42,8 +42,8 @@ typedef struct
     UARTDeviceRegisters regs;
 
     uint8_t cbuf[SMP_SERIAL_DEVICE_AVR_CBUF_SIZE];
-    uint8_t rindex;
-    uint8_t windex;
+    volatile uint8_t rindex;
+    volatile uint8_t windex;
 } UARTDevice;
 
 static void rx_interrupt_handler(UARTDevice *dev);
