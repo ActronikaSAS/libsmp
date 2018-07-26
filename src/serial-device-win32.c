@@ -221,3 +221,23 @@ ssize_t smp_serial_device_read(SmpSerialDevice *device, void *buf, size_t size)
 
     return rbytes;
 }
+
+int smp_serial_device_wait(SmpSerialDevice *device, int timeout_ms)
+{
+    int ret;
+
+    if (timeout_ms < 0)
+        timeout_ms = INFINITE;
+
+    ret = WaitForSingleObject(device->handle, timeout_ms);
+    switch (ret) {
+        case WAIT_OBJECT_0:
+            return 0;
+        case WAIT_TIMEOUT:
+            return -ETIMEDOUT;
+        case WAIT_ABANDONED:
+        case WAIT_FAILED:
+        default:
+            return -EFAULT;
+    }
+}

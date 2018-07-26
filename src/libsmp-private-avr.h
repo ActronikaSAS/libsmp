@@ -56,6 +56,10 @@ extern "C" {
 #define EBADMSG     74      /* Not a data message */
 #endif
 
+#ifndef ETIMEDOUT
+#define ETIMEDOUT 110    /* Connection timed out */
+#endif
+
 #ifdef __cplusplus
 }
 #endif

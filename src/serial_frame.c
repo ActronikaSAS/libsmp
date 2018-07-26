@@ -339,3 +339,25 @@ int smp_serial_frame_process_recv_fd(SmpSerialFrameContext *ctx)
 
     return 0;
 }
+
+/**
+ * \ingroup serial_frame
+ * Wait for an event on the serial and process it.
+ *
+ * @param[in] ctx the SmpSerialFrameContext
+ * @param[in] timeout_ms a timeout in milliseconds. A negative value means no
+ *                       timeout
+ *
+ * @return 0 on success, a negative errno otherwise.
+ */
+int smp_serial_frame_wait_and_process(SmpSerialFrameContext *ctx,
+        int timeout_ms)
+{
+    int ret;
+
+    ret = smp_serial_device_wait(&ctx->device, timeout_ms);
+    if (ret == 0)
+        ret = smp_serial_frame_process_recv_fd(ctx);
+
+    return ret;
+}

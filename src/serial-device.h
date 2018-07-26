@@ -36,6 +36,9 @@ ssize_t smp_serial_device_write(SmpSerialDevice *device, const void *buf,
         size_t size);
 ssize_t smp_serial_device_read(SmpSerialDevice *device, void *buf, size_t size);
 
+/* negative timeout_ms means infinite */
+int smp_serial_device_wait(SmpSerialDevice *device, int timeout_ms);
+
 #ifdef __cplusplus
 }
 #endif

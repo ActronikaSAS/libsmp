@@ -21,6 +21,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#ifdef HAVE_POLL_H
+#include <poll.h>
+#endif
+
 #ifdef HAVE_TERMIOS_H
 #include <termios.h>
 #endif
@@ -169,4 +173,26 @@ ssize_t smp_serial_device_read(SmpSerialDevice *device, void *buf, size_t size)
     ret = read(device->fd, buf, size);
 
     return (ret < 0) ? -errno : ret;
+}
+
+int smp_serial_device_wait(SmpSerialDevice *device, int timeout_ms)
+{
+#ifdef HAVE_POLL_H
+    struct pollfd pfd;
+    int ret;
+
+    pfd.fd = device->fd;
+    pfd.events = POLLIN;
+    pfd.revents = 0;
+
+    ret = poll(&pfd, 1, timeout_ms);
+    if (ret < 0)
+        return -errno;
+    else if (ret == 0)
+        return -ETIMEDOUT;
+    else
+        return 0;
+#else
+    return -ENOSYS;
+#endif
 }

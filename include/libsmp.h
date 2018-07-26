@@ -269,6 +269,9 @@ SMP_API int smp_serial_frame_send(SmpSerialFrameContext *ctx,
                 const uint8_t *buf, size_t size);
 SMP_API int smp_serial_frame_process_recv_fd(SmpSerialFrameContext *ctx);
 
+SMP_API int smp_serial_frame_wait_and_process(SmpSerialFrameContext *ctx,
+                int timeout_ms);
+
 #ifdef __cplusplus
 }
 #endif

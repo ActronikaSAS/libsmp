@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include "Arduino.h"
 #include "HardwareSerial.h"
 #include "libsmp-private.h"
 
@@ -199,4 +200,39 @@ ssize_t smp_serial_device_read(SmpSerialDevice *sdev, void *buf, size_t size)
         ((uint8_t *) buf)[i] = (uint8_t) incomming_byte;
     }
     return i;
+}
+
+int smp_serial_device_wait(SmpSerialDevice *device, int timeout_ms)
+{
+    HardwareSerial *serial;
+
+    serial = get_device_from_fd(device->fd);
+
+    /* do we already have some data ? */
+    if (serial->available() > 0)
+        return 0;
+
+    if (timeout_ms < 0) {
+        /* never timeout */
+        while (serial->available() <= 0);
+
+        return 0;
+    } else {
+        unsigned long start_time = millis();
+        unsigned long current_time;
+        start_time = millis();
+
+        for (current_time = millis();
+                (current_time - start_time) < (unsigned long) timeout_ms;
+                current_time = millis()) {
+            if (serial->available() > 0)
+                return 0;
+        }
+
+        /* make a last try */
+        if (serial->available() > 0)
+            return 0;
+
+        return -ETIMEDOUT;
+    }
 }

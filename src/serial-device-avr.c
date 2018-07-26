@@ -20,6 +20,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <string.h>
+#include <util/delay.h>
 
 #include "serial-device.h"
 #include "libsmp-private.h"
@@ -462,4 +463,35 @@ ssize_t smp_serial_device_read(SmpSerialDevice *sdev, void *buf, size_t size)
     }
 
     return i;
+}
+
+int smp_serial_device_wait(SmpSerialDevice *sdev, int timeout_ms)
+{
+    UARTDevice *dev;
+
+    dev = get_device_from_fd(sdev->fd);
+
+    if (dev->rindex != dev->windex)
+        return 0;
+
+    if (timeout_ms < 0) {
+        while (dev->rindex == dev->windex);
+
+        return 0;
+    } else {
+        unsigned int elapsed_time;
+
+        /* As we have no time or ready func, we just delay to count time */
+        for (elapsed_time = 0; elapsed_time < timeout_ms; elapsed_time += 5) {
+            if (dev->rindex != dev->windex)
+                return 0;
+
+            _delay_ms(5);
+        }
+
+        if (dev->rindex != dev->windex)
+            return 0;
+
+        return -ETIMEDOUT;
+    }
 }

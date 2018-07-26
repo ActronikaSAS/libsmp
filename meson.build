@@ -57,6 +57,11 @@ if meson.get_compiler('c').has_function('tcgetattr', prefix: '#include <termios.
   cdata.set('HAVE_TERMIOS_H', true)
 endif
 
+# check for poll
+if meson.get_compiler('c').has_function('poll', prefix: '#include <poll.h>')
+  cdata.set('HAVE_POLL_H', true)
+endif
+
 cdata.set('AVR_ENABLE_SERIAL0', get_option('avr-enable-serial0'),
     description : 'Enable AVR Serial0 handling')
 cdata.set('AVR_ENABLE_SERIAL1', get_option('avr-enable-serial1'),
