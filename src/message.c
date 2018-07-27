@@ -247,13 +247,14 @@ static ssize_t smp_message_decode_value(SmpValue *value, const uint8_t *buffer,
             /* recalculate argsize with string size */
             argsize = 1 + smp_value_compute_size(value);
             break;
-        case SMP_TYPE_RAW:
-            argsize = smp_message_decode_raw(value, buffer, size - 1);
-            if (argsize < 0)
+        case SMP_TYPE_RAW: {
+            int ret = smp_message_decode_raw(value, buffer, size - 1);
+            if (ret < 0)
                 break;
 
             argsize = 1 + smp_value_compute_size(value);
             break;
+        }
         case SMP_TYPE_F32:
             value->value.f32 = smp_read_f32(buffer);
             break;
