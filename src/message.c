@@ -301,7 +301,7 @@ static ssize_t smp_message_encode_value(const SmpValue *value, uint8_t *buffer)
                 break;
             case SMP_TYPE_STRING: {
                 int len = strlen(value->value.cstring);
-                if (len + 1 > UINT16_MAX) {
+                if (len + 1 > (int) UINT16_MAX) {
                     /* string too long */
                     return 0;
                 }
