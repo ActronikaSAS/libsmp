@@ -482,7 +482,8 @@ int smp_serial_device_wait(SmpSerialDevice *sdev, int timeout_ms)
         unsigned int elapsed_time;
 
         /* As we have no time or ready func, we just delay to count time */
-        for (elapsed_time = 0; elapsed_time < timeout_ms; elapsed_time += 5) {
+        for (elapsed_time = 0; elapsed_time < (unsigned int) timeout_ms;
+                elapsed_time += 5) {
             if (dev->rindex != dev->windex)
                 return 0;
 
