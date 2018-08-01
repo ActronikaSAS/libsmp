@@ -91,11 +91,11 @@ configure_file(output : 'libsmp-config.h',
 
 libsmp_config_incdir = include_directories('.')
 
+dependencies = []
 if get_option('use-arduino-lib')
-    arduino_core_dep = subproject('arduino-core').get_variable('arduino_core_dep')
-    dependencies = [arduino_core_dep]
-else
-    dependencies = []
+  arduino_core_dep = dependency('arduino-core',
+      fallback: ['arduino-core', 'arduino_core_dep'])
+  dependencies += [arduino_core_dep]
 endif
 
 libsmp_flags = []
