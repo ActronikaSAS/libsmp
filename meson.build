@@ -93,9 +93,28 @@ libsmp_config_incdir = include_directories('.')
 
 dependencies = []
 if get_option('use-arduino-lib')
-  arduino_core_dep = dependency('arduino-core',
-      fallback: ['arduino-core', 'arduino_core_dep'])
-  dependencies += [arduino_core_dep]
+  arduino_core_dep_list = [
+      # dep name, subproject name, dep variable
+      ['arduino-core', 'arduino-core', 'arduino_core_dep'],
+      ['teensy-core', 'teensy-core', 'teensy_core_dep'],
+      ]
+
+  # we have no break in Meson right now so do it by hand
+  found = false
+  foreach dep : arduino_core_dep_list
+    if not found
+      arduino_core_dep = dependency(dep[0],
+          fallback: [dep[1], dep[2]],
+          required: false)
+      if arduino_core_dep.found()
+        found = true
+      endif
+    endif
+  endforeach
+
+  if not arduino_core_dep.found()
+    error('No arduino core found')
+  endif
 endif
 
 libsmp_flags = []
