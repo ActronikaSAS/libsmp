@@ -22,22 +22,22 @@
 
 typedef struct
 {
-    char *name;
+    const char *name;
     HardwareSerial *dev;
 } DeviceMap;
 
 static DeviceMap devmap[] = {
 #ifdef HAVE_HWSERIAL0
-    { (char *) "serial0", &Serial },
+    { "serial0", &Serial },
 #endif
 #ifdef HAVE_HWSERIAL1
-    { (char *) "serial1", &Serial1 },
+    { "serial1", &Serial1 },
 #endif
 #ifdef HAVE_HWSERIAL2
-    { (char *) "serial2", &Serial2 },
+    { "serial2", &Serial2 },
 #endif
 #ifdef HAVE_HWSERIAL3
-    { (char *) "serial3", &Serial3 },
+    { "serial3", &Serial3 },
 #endif
 };
 
