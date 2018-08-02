@@ -174,7 +174,7 @@ ssize_t smp_serial_device_write(SmpSerialDevice *sdev, const void *buf,
     if (serial == NULL)
         return -ENOENT;
 
-    return serial->write((uint8_t *) buf, size);
+    return serial->write((const uint8_t *) buf, size);
 }
 
 ssize_t smp_serial_device_read(SmpSerialDevice *sdev, void *buf, size_t size)
