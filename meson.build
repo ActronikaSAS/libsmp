@@ -1,30 +1,36 @@
 project('smp', 'c', 'cpp',
     version : '0.3.0',
-    meson_version : '>= 0.38.0',
+    meson_version : '>= 0.43.0',
     default_options : [
       'warning_level=2'
       ])
 
-if meson.get_compiler('c').get_id() == 'gcc'
-  add_project_arguments([
-      # warnings flags
-      '-Wno-unused-parameter',
-      '-Wformat-nonliteral',
-      '-Wformat-security',
-      '-Winit-self',
-      '-Wswitch-default',
-      '-Wuninitialized',
-      '-Wmaybe-uninitialized',
-      '-Wshadow',
-      '-Wframe-larger-than=4096',
-      '-Wpointer-arith',
-      '-Wundef',
-      '-Wcast-qual',
-      '-Wjump-misses-init',
-      '-Wmissing-prototypes',
-      '-Wno-type-limits'
-      ], language : 'c')
-endif
+c_compiler = meson.get_compiler('c')
+cpp_compiler = meson.get_compiler('cpp')
+
+common_warning_flags = [
+    '-Wno-unused-parameter',
+    '-Wformat-nonliteral',
+    '-Wformat-security',
+    '-Winit-self',
+    '-Wswitch-default',
+    '-Wuninitialized',
+    '-Wmaybe-uninitialized',
+    '-Wshadow',
+    '-Wframe-larger-than=4096',
+    '-Wpointer-arith',
+    '-Wundef',
+    '-Wcast-qual',
+    '-Wno-type-limits'
+    ]
+
+c_warning_flags = common_warning_flags
+c_warning_flags += [
+    '-Wjump-misses-init',
+    '-Wmissing-prototypes',
+    ]
+
+cpp_warning_flags = common_warning_flags
 
 libsmp_incdir = include_directories(['include'])
 
@@ -36,7 +42,7 @@ libsmp_src = [
 # select SerialDevice implementation depending on cpu family and stack perferencies
 if get_option('use-arduino-lib')
     libsmp_src += ['src/serial-device-arduino.cpp']
-    add_project_arguments(['-Wno-non-virtual-dtor'], language : 'cpp')
+    cpp_warning_flags += ['-Wno-non-virtual-dtor']
 else
     if host_machine.cpu_family() == 'atmega'
         libsmp_src += ['src/serial-device-avr.c']
@@ -53,12 +59,12 @@ endif
 cdata = configuration_data()
 
 # check for termios header
-if meson.get_compiler('c').has_function('tcgetattr', prefix: '#include <termios.h>')
+if c_compiler.has_function('tcgetattr', prefix: '#include <termios.h>')
   cdata.set('HAVE_TERMIOS_H', true)
 endif
 
 # check for poll
-if meson.get_compiler('c').has_function('poll', prefix: '#include <poll.h>')
+if c_compiler.has_function('poll', prefix: '#include <poll.h>')
   cdata.set('HAVE_POLL_H', true)
 endif
 
@@ -118,6 +124,12 @@ if get_option('use-arduino-lib')
 
   dependencies += [arduino_core_dep]
 endif
+
+# add warnings flags
+add_project_arguments(c_compiler.get_supported_arguments(c_warning_flags),
+    language: 'c')
+add_project_arguments(cpp_compiler.get_supported_arguments(cpp_warning_flags),
+    language: 'cpp')
 
 libsmp_flags = []
 if get_option('default_library') == 'shared'
