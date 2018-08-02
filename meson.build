@@ -115,6 +115,8 @@ if get_option('use-arduino-lib')
   if not arduino_core_dep.found()
     error('No arduino core found')
   endif
+
+  dependencies += [arduino_core_dep]
 endif
 
 libsmp_flags = []
