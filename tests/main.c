@@ -28,6 +28,10 @@ int main(int argc, char *argv[])
     if (ret != CUE_SUCCESS)
         return CU_get_error();
 
+    ret = context_test_register();
+    if (ret != CUE_SUCCESS)
+        return ret;
+
     ret = serial_frame_test_register();
     if (ret != CUE_SUCCESS)
         return ret;

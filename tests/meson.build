@@ -1,4 +1,5 @@
 tests_src = [
+    'context.c',
     'main.c',
     'message.c',
     'serial_frame.c',

@@ -340,6 +340,28 @@ SMP_API int smp_serial_frame_process_recv_fd(SmpSerialFrameContext *ctx);
 SMP_API int smp_serial_frame_wait_and_process(SmpSerialFrameContext *ctx,
                 int timeout_ms);
 
+/* Context API */
+typedef struct SmpContext SmpContext;
+
+typedef struct
+{
+    void (*new_message_cb)(SmpContext *ctx, SmpMessage *msg, void *userdata);
+    void (*error_cb)(SmpContext *ctx, SmpError error, void *userdata);
+} SmpEventCallbacks;
+
+SMP_API SmpContext *smp_context_new(const SmpEventCallbacks *cbs, void *userdata);
+SMP_API void smp_context_free(SmpContext *ctx);
+
+SMP_API int smp_context_open(SmpContext *ctx, const char *device);
+SMP_API void smp_context_close(SmpContext *ctx);
+SMP_API int smp_context_set_serial_config(SmpContext *ctx,
+                SmpSerialBaudrate baudrate, SmpSerialParity parity,
+                int flow_control);
+SMP_API intptr_t smp_context_get_fd(SmpContext *ctx);
+SMP_API int smp_context_send_message(SmpContext *ctx, SmpMessage *msg);
+SMP_API int smp_context_process_fd(SmpContext *ctx);
+SMP_API int smp_context_wait_and_process(SmpContext *ctx, int timeout_ms);
+
 #ifdef __cplusplus
 }
 #endif

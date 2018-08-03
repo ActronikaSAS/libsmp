@@ -35,6 +35,7 @@ cpp_warning_flags = common_warning_flags
 libsmp_incdir = include_directories(['include'])
 
 libsmp_src = [
+    'src/context.c',
     'src/message.c',
     'src/serial_frame.c',
     'src/serial-protocol.c',

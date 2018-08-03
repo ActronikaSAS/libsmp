@@ -1,5 +1,5 @@
 /* libsmp
- * Copyright (C) 2017 Actronika SAS
+ * Copyright (C) 2018 Actronika SAS
  *     Author: Aurélien Zanelli <aurelien.zanelli@actronika.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,16 +15,24 @@
  * limitations under the License.
  */
 
-#ifndef TESTS_H
-#define TESTS_H
+#ifndef LIBSMP_CONTEXT_H
+#define LIBSMP_CONTEXT_H
 
-#include <CUnit/CUnit.h>
+#include "libsmp.h"
 
-#define DEFINE_TEST(func) { #func, func }
+#include <stdbool.h>
 
-CU_ErrorCode context_test_register(void);
-CU_ErrorCode serial_frame_test_register(void);
-CU_ErrorCode serial_protocol_test_register(void);
-CU_ErrorCode message_test_register(void);
+#include "serial-protocol.h"
+
+struct SmpContext
+{
+    SmpSerialProtocolDecoder *decoder;
+    SmpSerialDevice device;
+
+    SmpEventCallbacks cbs;
+    void *userdata;
+
+    bool opened;
+};
 
 #endif
