@@ -46,6 +46,26 @@ extern "C" {
 #   define SMP_API
 #endif
 
+/* deprecation attribute */
+#ifndef SMP_DISABLE_DEPRECATED
+#ifdef _WIN32
+#define SMP_DEPRECATED __declspec(deprecated)
+#else
+#define SMP_DEPRECATED __attribute__ ((deprecated))
+#endif
+
+#ifdef _WIN32
+#define SMP_DEPRECATED_FOR(f) __declspec(deprecated("is deprecated. Use '" #f "' instead"))
+#else
+#define SMP_DEPRECATED_FOR(f) __attribute__((__deprecated__("Use '" #f "' instead")))
+#endif
+
+#else /* SMP_DISABLE_DEPRECATED */
+#define SMP_DEPRECATED
+#define SMP_DEPRECATED_FOR(f)
+#endif /* SMP_DISABLE_DEPRECATED */
+
+/* ssize_t definition */
 #ifdef __AVR
 /* we don't have sys/types.h in avr-libc so define ssize_t ourself */
 typedef long ssize_t;
