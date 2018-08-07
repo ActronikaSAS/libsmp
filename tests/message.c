@@ -118,7 +118,7 @@ static void test_smp_message_get(void)
             11, SMP_TYPE_F32, &f32,
             12, SMP_TYPE_F64, &f64,
             -1);
-    CU_ASSERT_EQUAL(ret, 0);
+    CU_ASSERT_EQUAL_FATAL(ret, 0);
     CU_ASSERT_EQUAL(u8, 33);
     CU_ASSERT_EQUAL(i8, -23);
     CU_ASSERT_EQUAL(u16, 23291);
