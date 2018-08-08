@@ -29,6 +29,7 @@
 #endif
 
 #include <libsmp-config.h>
+#include <libsmp-static.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -218,13 +219,6 @@ typedef enum
     SMP_SERIAL_FRAME_ERROR_PAYLOAD_TOO_BIG = -2,
 } SmpSerialFrameError;
 
-typedef enum
-{
-    SMP_SERIAL_FRAME_DECODER_STATE_WAIT_HEADER,
-    SMP_SERIAL_FRAME_DECODER_STATE_IN_FRAME,
-    SMP_SERIAL_FRAME_DECODER_STATE_IN_FRAME_ESC,
-} SmpSerialFrameDecoderState;
-
 /**
  * \ingroup serial_frame
  * Serial baudrate
@@ -265,17 +259,6 @@ typedef struct
     void (*error)(SmpSerialFrameError error, void *userdata);
 } SmpSerialFrameDecoderCallbacks;
 
-typedef struct
-{
-    SmpSerialFrameDecoderState state;
-    SmpSerialFrameDecoderCallbacks cbs;
-
-    uint8_t frame[SMP_SERIAL_FRAME_MAX_FRAME_SIZE];
-    size_t frame_offset;
-
-    void *userdata;
-} SmpSerialFrameDecoder;
-
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 typedef struct
@@ -291,8 +274,12 @@ typedef struct
 
 typedef struct
 {
-    SmpSerialFrameDecoder decoder;
+    SmpStaticSerialProtocolDecoder decoder;
     SmpSerialDevice device;
+
+    uint8_t frame[SMP_SERIAL_FRAME_MAX_FRAME_SIZE];
+    SmpSerialFrameDecoderCallbacks cbs;
+    void *userdata;
 } SmpSerialFrameContext;
 
 SMP_API int smp_serial_frame_init(SmpSerialFrameContext *ctx,

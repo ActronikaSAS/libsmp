@@ -30,140 +30,7 @@
 
 #include "libsmp-private.h"
 #include "serial-device.h"
-
-#define START_BYTE 0x10
-#define END_BYTE 0xFF
-#define ESC_BYTE 0x1B
-
-static inline int is_magic_byte(uint8_t byte)
-{
-    return (byte == START_BYTE || byte == END_BYTE || byte == ESC_BYTE);
-}
-
-static uint8_t compute_checksum(const uint8_t *buf, size_t size)
-{
-    uint8_t checksum = 0;
-    size_t i;
-
-    for (i = 0; i < size; i++) {
-        checksum ^= buf[i];
-    }
-
-    return checksum;
-}
-
-static int smp_serial_frame_decoder_init(SmpSerialFrameDecoder *decoder,
-        const SmpSerialFrameDecoderCallbacks *cbs, void *userdata)
-{
-    memset(decoder, 0, sizeof(*decoder));
-
-    decoder->state = SMP_SERIAL_FRAME_DECODER_STATE_WAIT_HEADER;
-    decoder->cbs = *cbs;
-    decoder->userdata = userdata;
-
-    return 0;
-}
-
-static void
-smp_serial_frame_decoder_process_byte_inframe(SmpSerialFrameDecoder *decoder,
-        uint8_t byte)
-{
-    switch (byte) {
-        case START_BYTE:
-            /* we are in a frame without end byte, resync on current byte */
-            decoder->cbs.error(SMP_SERIAL_FRAME_ERROR_CORRUPTED,
-                    decoder->userdata);
-            decoder->frame_offset = 0;
-            break;
-        case ESC_BYTE:
-            decoder->state = SMP_SERIAL_FRAME_DECODER_STATE_IN_FRAME_ESC;
-            break;
-        case END_BYTE: {
-           size_t framesize;
-           uint8_t cs;
-
-           /* we should at least have the CRC */
-           if (decoder->frame_offset < 1) {
-               decoder->cbs.error(SMP_SERIAL_FRAME_ERROR_CORRUPTED,
-                       decoder->userdata);
-               decoder->state = SMP_SERIAL_FRAME_DECODER_STATE_WAIT_HEADER;
-               break;
-           }
-
-           /* framesize is without the CRC */
-           framesize = decoder->frame_offset - 1;
-
-           /* frame complete, check crc and call user callback */
-           cs = compute_checksum(decoder->frame, framesize);
-           if (cs != decoder->frame[decoder->frame_offset - 1]) {
-               decoder->cbs.error(SMP_SERIAL_FRAME_ERROR_CORRUPTED,
-                       decoder->userdata);
-           } else {
-               decoder->cbs.new_frame(decoder->frame, framesize,
-                       decoder->userdata);
-           }
-
-           decoder->state = SMP_SERIAL_FRAME_DECODER_STATE_WAIT_HEADER;
-           break;
-        }
-        default:
-            if (decoder->frame_offset >= SMP_SERIAL_FRAME_MAX_FRAME_SIZE) {
-                decoder->cbs.error(SMP_SERIAL_FRAME_ERROR_PAYLOAD_TOO_BIG,
-                        decoder->userdata);
-                break;
-            }
-
-            decoder->frame[decoder->frame_offset++] = byte;
-            break;
-    }
-}
-
-static void
-smp_serial_frame_decoder_process_byte(SmpSerialFrameDecoder *decoder,
-        uint8_t byte)
-{
-    switch (decoder->state) {
-        case SMP_SERIAL_FRAME_DECODER_STATE_WAIT_HEADER:
-            if (byte == START_BYTE) {
-                decoder->state = SMP_SERIAL_FRAME_DECODER_STATE_IN_FRAME;
-                decoder->frame_offset = 0;
-            }
-            break;
-
-        case SMP_SERIAL_FRAME_DECODER_STATE_IN_FRAME:
-            smp_serial_frame_decoder_process_byte_inframe(decoder, byte);
-            break;
-
-        case SMP_SERIAL_FRAME_DECODER_STATE_IN_FRAME_ESC:
-            if (decoder->frame_offset >= SMP_SERIAL_FRAME_MAX_FRAME_SIZE) {
-                decoder->cbs.error(SMP_SERIAL_FRAME_ERROR_PAYLOAD_TOO_BIG,
-                        decoder->userdata);
-                break;
-            }
-
-            decoder->frame[decoder->frame_offset++] = byte;
-            decoder->state = SMP_SERIAL_FRAME_DECODER_STATE_IN_FRAME;
-            break;
-
-        default:
-            break;
-    }
-}
-
-/* dest should be able to contain at least 2 bytes. returns the number of
- * bytes written */
-static int smp_serial_frame_write_byte(uint8_t *dest, uint8_t byte)
-{
-    int offset = 0;
-
-    /* escape special byte */
-    if (is_magic_byte(byte))
-        dest[offset++] = ESC_BYTE;
-
-    dest[offset++] = byte;
-
-    return offset;
-}
+#include "serial-protocol.h"
 
 /* API */
 
@@ -182,6 +49,7 @@ static int smp_serial_frame_write_byte(uint8_t *dest, uint8_t byte)
 int smp_serial_frame_init(SmpSerialFrameContext *ctx, const char *device,
         const SmpSerialFrameDecoderCallbacks *cbs, void *userdata)
 {
+    SmpSerialProtocolDecoder *dec;
     int ret;
 
     return_val_if_fail(ctx != NULL, SMP_ERROR_INVALID_PARAM);
@@ -190,14 +58,18 @@ int smp_serial_frame_init(SmpSerialFrameContext *ctx, const char *device,
     return_val_if_fail(cbs->new_frame != NULL, SMP_ERROR_INVALID_PARAM);
     return_val_if_fail(cbs->error != NULL, SMP_ERROR_INVALID_PARAM);
 
+    ctx->cbs = *cbs;
+    ctx->userdata = userdata;
+
     ret = smp_serial_device_open(&ctx->device, device);
     if (ret < 0)
         return ret;
 
-    ret = smp_serial_frame_decoder_init(&ctx->decoder, cbs, userdata);
-    if (ret < 0) {
+    dec = smp_serial_protocol_decoder_new_from_static(&ctx->decoder,
+            sizeof(ctx->decoder), ctx->frame, SMP_SERIAL_FRAME_MAX_FRAME_SIZE);
+    if (dec == NULL) {
         smp_serial_device_close(&ctx->device);
-        return ret;
+        return SMP_ERROR_NO_MEM;
     }
 
     return 0;
@@ -265,42 +137,24 @@ int smp_serial_frame_send(SmpSerialFrameContext *ctx, const uint8_t *buf,
         size_t size)
 {
     uint8_t txbuf[SMP_SERIAL_FRAME_MAX_FRAME_SIZE];
-    size_t payload_size;
-    size_t offset = 0;
-    size_t i;
+    uint8_t *ptxbuf = txbuf;
+    size_t txbuf_size = SMP_SERIAL_FRAME_MAX_FRAME_SIZE;
+    ssize_t encoded_size;
     int ret;
 
     return_val_if_fail(ctx != NULL, SMP_ERROR_INVALID_PARAM);
     return_val_if_fail(buf != NULL, SMP_ERROR_INVALID_PARAM);
 
-    /* first, compute our payload size and make sure it doen't exceed our buffer
-     * size. We need at least three extra bytes (START, END and CRC) + a number
-     * of escape bytes */
-    payload_size = size + 3;
-
-    for (i = 0; i < size; i++) {
-        if (is_magic_byte(buf[i]))
-            payload_size++;
-    }
-
-    if (payload_size > SMP_SERIAL_FRAME_MAX_FRAME_SIZE)
-        return SMP_ERROR_NO_MEM;
-
-    /* prepare the buffer */
-    txbuf[offset++] = START_BYTE;
-    for (i = 0; i < size; i++)
-        offset += smp_serial_frame_write_byte(txbuf + offset, buf[i]);
-
-    offset += smp_serial_frame_write_byte(txbuf + offset,
-            compute_checksum(buf, size));
-    txbuf[offset++] = END_BYTE;
+    encoded_size = smp_serial_protocol_encode(buf, size, &ptxbuf, txbuf_size);
+    if (encoded_size < 0)
+        return encoded_size;
 
     /* send it */
-    ret = smp_serial_device_write(&ctx->device, txbuf, offset);
+    ret = smp_serial_device_write(&ctx->device, txbuf, encoded_size);
     if (ret < 0)
         return ret;
 
-    if ((size_t) ret != offset)
+    if (ret != encoded_size)
         return SMP_ERROR_OTHER;
 
     return 0;
@@ -318,8 +172,12 @@ int smp_serial_frame_send(SmpSerialFrameContext *ctx, const uint8_t *buf,
  */
 int smp_serial_frame_process_recv_fd(SmpSerialFrameContext *ctx)
 {
+    SmpSerialProtocolDecoder *dec = (SmpSerialProtocolDecoder *) &ctx->decoder;
     ssize_t rbytes;
     char c;
+    uint8_t *frame;
+    size_t framesize;
+    int ret;
 
     while (1) {
         rbytes = smp_serial_device_read(&ctx->device, &c, 1);
@@ -332,7 +190,21 @@ int smp_serial_frame_process_recv_fd(SmpSerialFrameContext *ctx)
             return 0;
         }
 
-        smp_serial_frame_decoder_process_byte(&ctx->decoder, c);
+        ret = smp_serial_protocol_decoder_process_byte(dec, c, &frame,
+                &framesize);
+        if (ret < 0) {
+            SmpSerialFrameError error;
+
+            if (ret == SMP_ERROR_TOO_BIG)
+                error = SMP_SERIAL_FRAME_ERROR_PAYLOAD_TOO_BIG;
+            else
+                error = SMP_SERIAL_FRAME_ERROR_CORRUPTED;
+
+            ctx->cbs.error(error, ctx->userdata);
+        }
+
+        if (frame != NULL)
+            ctx->cbs.new_frame(frame, framesize, ctx->userdata);
     }
 
     return 0;

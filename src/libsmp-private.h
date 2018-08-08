@@ -18,6 +18,20 @@
 #ifndef LIBSMP_PRIVATE_H
 #define LIBSMP_PRIVATE_H
 
+#include <stddef.h>
+#include <stdint.h>
+
+#ifndef __AVR
+#include <sys/types.h>
+#endif
+
+#ifdef __AVR
+/* we don't have sys/types.h in avr-libc so define ssize_t ourself */
+typedef long ssize_t;
+#elif defined(_WIN32) || defined(_WIN64)
+typedef signed __int64 ssize_t;
+#endif
+
 #define return_if_fail(expr) \
     do { \
         if (!(expr)) \
@@ -31,5 +45,7 @@
     } while (0);
 
 #define SMP_N_ELEMENTS(arr) (sizeof((arr))/sizeof((arr)[0]))
+
+#define smp_new(Type) calloc(1, sizeof(Type))
 
 #endif

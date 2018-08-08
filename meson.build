@@ -36,7 +36,8 @@ libsmp_incdir = include_directories(['include'])
 
 libsmp_src = [
     'src/message.c',
-    'src/serial_frame.c'
+    'src/serial_frame.c',
+    'src/serial-protocol.c',
     ]
 
 # select SerialDevice implementation depending on cpu family and stack perferencies
@@ -96,6 +97,36 @@ configure_file(output : 'libsmp-config.h',
     configuration : cdata)
 
 libsmp_config_incdir = include_directories('.')
+
+static_obj_list = [
+    # objname, header file, token
+    ['SmpSerialProtocolDecoder', '"serial-protocol.h"', 'smp-serial-protocol-decoder-size'],
+    ]
+
+cdata = configuration_data()
+foreach obj : static_obj_list
+  incdir = [
+      libsmp_incdir,
+      include_directories('src'),
+      libsmp_config_incdir,
+      ]
+
+  size = c_compiler.sizeof(obj[0],
+      prefix: '#include ' + obj[1],
+      include_directories: incdir,
+      # builddir (which contains libsmp-config.h) is not included when checking
+      # sizeof so:
+      args: '-I' + meson.current_build_dir())
+
+  if size <= 0
+    error('failed to determine ' + obj[0] + ' size')
+  endif
+
+  cdata.set(obj[2], size)
+endforeach
+configure_file(input: 'src/libsmp-static.h.in',
+    output: 'libsmp-static.h', configuration: cdata)
+
 
 dependencies = []
 if get_option('use-arduino-lib')
