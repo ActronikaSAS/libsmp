@@ -39,6 +39,9 @@ static DeviceMap devmap[] = {
 #ifdef HAVE_HWSERIAL3
     { "serial3", &Serial3 },
 #endif
+#ifdef HAVE_HWSERIALUSB
+    { "serialUSB", &SerialUSB },
+#endif
 };
 
 static int get_device_fd_by_name(const char *name)
@@ -158,7 +161,13 @@ int smp_serial_device_set_config(SmpSerialDevice *sdev,
     }
 
     serial->end();
+#ifdef __SAM3X8E__
+    // Arduino DUE
+    serial->begin(br);
+    (void)mode; // Avoid warning for unused parameter
+#else
     serial->begin(br, mode);
+#endif
 
     /* wait for device to be opened */
     while (!(*serial));

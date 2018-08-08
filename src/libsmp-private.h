@@ -20,7 +20,7 @@
 
 #include "serial-device.h"
 
-#if defined(__AVR) || defined(__TEENSY)
+#if defined(__AVR) || defined(__TEENSY) || defined(__SAM3X8E__)
 #include "libsmp-private-avr.h"
 #else
 #include "libsmp-private-posix.h"
