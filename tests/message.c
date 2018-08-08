@@ -16,6 +16,8 @@
  */
 
 #include <CUnit/CUnit.h>
+
+#define SMP_ENABLE_STATIC_API
 #include <libsmp.h>
 #include "tests.h"
 
@@ -24,6 +26,64 @@
 /* use static variable to be sure while comparing */
 static const float f32_orig_value = 1.42f;
 static const double f64_orig_value = 3.14;
+
+static void test_smp_message_new_with_id(void)
+{
+    SmpMessage *msg;
+
+    msg = smp_message_new_with_id(42);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
+
+    CU_ASSERT_EQUAL(smp_message_get_msgid(msg), 42);
+}
+
+static void test_smp_message_new_from_static(void)
+{
+    SmpMessage *msg;
+    SmpStaticMessage smsg;
+
+    msg = smp_message_new_from_static(NULL, 0, NULL, 0);
+    CU_ASSERT_PTR_NULL(msg);
+
+    msg = smp_message_new_from_static(&smsg, 0, NULL, 0);
+    CU_ASSERT_PTR_NULL(msg);
+
+    msg = smp_message_new_from_static(&smsg, sizeof(smsg) - 1, NULL, 0);
+    CU_ASSERT_PTR_NULL(msg);
+
+    msg = smp_message_new_from_static(&smsg, sizeof(smsg), NULL, 0);
+    CU_ASSERT_PTR_NOT_NULL(msg);
+
+    msg = smp_message_new_from_static(&smsg, sizeof(smsg) + 10, NULL, 0);
+    CU_ASSERT_PTR_NOT_NULL(msg);
+}
+
+static void test_smp_message_new_from_static_with_id(void)
+{
+    SmpMessage *msg;
+    SmpStaticMessage smsg;
+
+    msg = smp_message_new_from_static_with_id(NULL, 0, NULL, 0, 42);
+    CU_ASSERT_PTR_NULL(msg);
+
+    msg = smp_message_new_from_static_with_id(&smsg, 0, NULL, 0, 42);
+    CU_ASSERT_PTR_NULL(msg);
+
+    msg = smp_message_new_from_static_with_id(&smsg, sizeof(smsg) - 1, NULL, 0,
+            42);
+    CU_ASSERT_PTR_NULL(msg);
+
+    msg = smp_message_new_from_static_with_id(&smsg, sizeof(smsg), NULL, 0, 42);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
+
+    CU_ASSERT_EQUAL(smp_message_get_msgid(msg), 42);
+
+    msg = smp_message_new_from_static_with_id(&smsg, sizeof(smsg) + 10, NULL, 0,
+            42);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
+
+    CU_ASSERT_EQUAL(smp_message_get_msgid(msg), 42);
+}
 
 static void setup_test_message_get(SmpMessage *msg)
 {
@@ -752,6 +812,10 @@ typedef struct
 } Test;
 
 static Test tests[] = {
+    { "test_smp_message_new_with_id", test_smp_message_new_with_id },
+    { "test_smp_message_new_from_static", test_smp_message_new_from_static },
+    { "test_smp_message_new_from_static_with_id",
+        test_smp_message_new_from_static_with_id },
     { "test_smp_message_get", test_smp_message_get },
     { "test_smp_message_get_value", test_smp_message_get_value },
     { "test_smp_message_get_uint8", test_smp_message_get_uint8 },

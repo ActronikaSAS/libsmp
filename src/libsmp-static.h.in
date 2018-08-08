@@ -24,6 +24,7 @@ extern "C" {
 
 typedef struct SmpStaticBuffer SmpStaticBuffer;
 typedef struct SmpStaticContext SmpStaticContext;
+typedef struct SmpStaticMessage SmpStaticMessage;
 typedef struct SmpStaticSerialProtocolDecoder SmpStaticSerialProtocolDecoder;
 
 struct SmpStaticBuffer {
@@ -32,6 +33,10 @@ struct SmpStaticBuffer {
 
 struct SmpStaticContext {
     uint8_t data[@smp-context-size@];
+};
+
+struct SmpStaticMessage {
+    uint8_t data[@smp-message-size@];
 };
 
 struct SmpStaticSerialProtocolDecoder {

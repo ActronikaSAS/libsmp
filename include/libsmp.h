@@ -171,6 +171,9 @@ typedef struct
 /**
  * \ingroup message
  * Message structure
+ *
+ * @warning using this structure directly is deprecated, use smp_message_new or
+ * smp_message_new_from_static to get a SmpMessage object
  */
 typedef struct
 {
@@ -179,6 +182,10 @@ typedef struct
 
     SmpValue values[SMP_MESSAGE_MAX_VALUES];
 } SmpMessage;
+
+SMP_API SmpMessage *smp_message_new(void);
+SMP_API SmpMessage *smp_message_new_with_id(uint32_t id);
+SMP_API void smp_message_free(SmpMessage *msg);
 
 SMP_API void smp_message_init(SmpMessage *msg, uint32_t msgid);
 SMP_API int smp_message_init_from_buffer(SmpMessage *msg, const uint8_t *buffer,
@@ -405,6 +412,12 @@ SMP_API SmpContext *smp_context_new_from_static(SmpStaticContext *sctx,
                 size_t struct_size, const SmpEventCallbacks *cbs,
                 void *userdata, SmpSerialProtocolDecoder *decoder,
                 SmpBuffer *serial_tx, SmpBuffer *msg_tx);
+
+SMP_API SmpMessage *smp_message_new_from_static(SmpStaticMessage *smsg,
+                size_t struct_size, SmpValue *values, size_t capacity);
+SMP_API SmpMessage *smp_message_new_from_static_with_id(SmpStaticMessage *smsg,
+                size_t struct_size, SmpValue *values, size_t capacity,
+                uint32_t id);
 #endif
 
 #ifdef __cplusplus

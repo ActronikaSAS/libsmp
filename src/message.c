@@ -27,6 +27,7 @@
 #include "libsmp-private.h"
 #include <stdarg.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define MSG_HEADER_SIZE 8
 
@@ -348,6 +349,94 @@ static size_t smp_message_compute_max_encoded_size(SmpMessage *msg)
 }
 
 /* API */
+
+/**
+ * \ingroup message
+ * Create a new SmpMessage.
+ *
+ * @return a new SmpMessage or NULL on error.
+ */
+SmpMessage *smp_message_new(void)
+{
+    return smp_message_new_with_id(0);
+}
+
+/**
+ * \ingroup message
+ * Create a new SmpMessage with given id.
+ *
+ * @param[in] id the ID of the message
+ *
+ * @return a new SmpMessage or NULL on error.
+ */
+SmpMessage *smp_message_new_with_id(uint32_t id)
+{
+    SmpMessage *msg;
+
+    msg = smp_new(SmpMessage);
+    if (msg == NULL)
+        return NULL;
+
+    smp_message_init(msg, id);
+
+    return msg;
+}
+
+/**
+ * \ingroup message
+ * Create a new SmpMessage from a static memory space
+ *
+ * @param[in] smsg a SmpStaticMessage
+ * @param[in] struct_size the size of smsg
+ * @param[in] values pointer to an array of values to use (not used for now)
+ * @param[in] capacity capacity of the provided values array (not used for now)
+ *
+ * @return a new SmpMessage or NULL on error.
+ */
+SmpMessage *smp_message_new_from_static(SmpStaticMessage *smsg,
+        size_t struct_size, SmpValue *values, size_t capacity)
+{
+    return smp_message_new_from_static_with_id(smsg, struct_size, values,
+            capacity, 0);
+}
+
+/**
+ * \ingroup message
+ * Create a new SmpMessage from a static memory space
+ *
+ * @param[in] smsg a SmpStaticMessage
+ * @param[in] struct_size the size of smsg
+ * @param[in] values pointer to an array of values to use (not used for now)
+ * @param[in] capacity capacity of the provided values array (not used for now)
+ * @param[in] id the ID of the message
+ *
+ * @return a new SmpMessage or NULL on error.
+ */
+SmpMessage *smp_message_new_from_static_with_id(SmpStaticMessage *smsg,
+        size_t struct_size, SmpValue *values, size_t capacity, uint32_t id)
+{
+    SmpMessage *msg = (SmpMessage *) smsg;
+
+    return_val_if_fail(smsg != NULL, NULL);
+    return_val_if_fail(struct_size >= sizeof(SmpMessage), NULL);
+
+    smp_message_init(msg, id);
+
+    return msg;
+}
+
+/**
+ * \ingroup message
+ * Free a previously allocated SmpMessage.
+ *
+ * @param[in] msg a SmpMessage
+ */
+void smp_message_free(SmpMessage *msg)
+{
+    return_if_fail(msg != NULL);
+
+    free(msg);
+}
 
 /**
  * \ingroup message
