@@ -326,7 +326,7 @@ int smp_serial_frame_process_recv_fd(SmpSerialFrameContext *ctx)
     while (1) {
         rbytes = smp_serial_device_read(&ctx->device, &c, 1);
         if (rbytes < 0) {
-            if (errno == EWOULDBLOCK || errno == EAGAIN)
+            if (rbytes == -EWOULDBLOCK || rbytes == -EAGAIN)
                 return 0;
 
             return -errno;
