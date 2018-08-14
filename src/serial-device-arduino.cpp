@@ -207,6 +207,8 @@ int smp_serial_device_wait(SmpSerialDevice *device, int timeout_ms)
     HardwareSerial *serial;
 
     serial = get_device_from_fd(device->fd);
+    if (serial == NULL)
+        return -ENOENT;
 
     /* do we already have some data ? */
     if (serial->available() > 0)
