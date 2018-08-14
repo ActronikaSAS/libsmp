@@ -50,7 +50,7 @@ static int get_device_fd_by_name(const char *name)
             return i;
     }
 
-    return -ENOENT;
+    return SMP_ERROR_NO_DEVICE;
 }
 
 static HardwareSerial *get_device_from_fd(int fd)
@@ -94,7 +94,7 @@ void smp_serial_device_close(SmpSerialDevice *sdev)
 
 intptr_t smp_serial_device_get_fd(SmpSerialDevice *sdev)
 {
-    return (sdev->fd < 0) ? -EBADF : sdev->fd;
+    return (sdev->fd < 0) ? SMP_ERROR_BAD_FD : sdev->fd;
 }
 
 int smp_serial_device_set_config(SmpSerialDevice *sdev,
@@ -107,11 +107,11 @@ int smp_serial_device_set_config(SmpSerialDevice *sdev,
 
     serial = get_device_from_fd(sdev->fd);
     if (serial == NULL)
-        return -ENOENT;
+        return SMP_ERROR_NO_DEVICE;
 
     if (flow_control != 0) {
         /* Not supported */
-        return -EINVAL;
+        return SMP_ERROR_INVALID_PARAM;
     }
 
     switch (baudrate) {
@@ -140,7 +140,7 @@ int smp_serial_device_set_config(SmpSerialDevice *sdev,
             br = 115200;
             break;
         default:
-            return -EINVAL;
+            return SMP_ERROR_INVALID_PARAM;
     }
 
     switch (parity) {
@@ -154,7 +154,7 @@ int smp_serial_device_set_config(SmpSerialDevice *sdev,
             mode = SERIAL_8E1;
             break;
         default:
-            return -EINVAL;
+            return SMP_ERROR_INVALID_PARAM;
     }
 
     serial->end();
@@ -172,7 +172,7 @@ ssize_t smp_serial_device_write(SmpSerialDevice *sdev, const void *buf,
 
     serial = get_device_from_fd(sdev->fd);
     if (serial == NULL)
-        return -ENOENT;
+        return SMP_ERROR_NO_DEVICE;
 
     return serial->write((const uint8_t *) buf, size);
 }
@@ -185,7 +185,7 @@ ssize_t smp_serial_device_read(SmpSerialDevice *sdev, void *buf, size_t size)
 
     serial = get_device_from_fd(sdev->fd);
     if (serial == NULL)
-        return -ENOENT;
+        return SMP_ERROR_NO_DEVICE;
 
     for (i = 0; i < size; i++) {
         if (serial->available() == 0) {
@@ -208,7 +208,7 @@ int smp_serial_device_wait(SmpSerialDevice *device, int timeout_ms)
 
     serial = get_device_from_fd(device->fd);
     if (serial == NULL)
-        return -ENOENT;
+        return SMP_ERROR_NO_DEVICE;
 
     /* do we already have some data ? */
     if (serial->available() > 0)
@@ -235,6 +235,6 @@ int smp_serial_device_wait(SmpSerialDevice *device, int timeout_ms)
         if (serial->available() > 0)
             return 0;
 
-        return -ETIMEDOUT;
+        return SMP_ERROR_TIMEDOUT;
     }
 }

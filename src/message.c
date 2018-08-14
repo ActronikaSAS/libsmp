@@ -25,7 +25,6 @@
 
 #include "libsmp.h"
 #include "libsmp-private.h"
-#include <errno.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -186,12 +185,12 @@ static int smp_message_decode_raw(SmpValue *value, const uint8_t *buffer,
     size_t rawsize;
 
     if (size < 2)
-        return -EBADMSG;
+        return SMP_ERROR_BAD_MESSAGE;
 
     rawsize = smp_read_uint16(buffer);
 
     if (size < 2 + rawsize)
-        return -EBADMSG;
+        return SMP_ERROR_BAD_MESSAGE;
 
     value->value.craw = buffer + 2;
     value->value.craw_size = rawsize;
@@ -206,7 +205,7 @@ static ssize_t smp_message_decode_value(SmpValue *value, const uint8_t *buffer,
 
     /* we need at least 2 bytes */
     if (size < 2)
-        return -EBADMSG;
+        return SMP_ERROR_BAD_MESSAGE;
 
     value->type = buffer[0];
     buffer++;
@@ -214,7 +213,7 @@ static ssize_t smp_message_decode_value(SmpValue *value, const uint8_t *buffer,
     argsize = 1 + smp_type_size(value->type);
 
     if (size < argsize)
-        return -EBADMSG;
+        return SMP_ERROR_BAD_MESSAGE;
 
     switch (value->type) {
         case SMP_TYPE_UINT8:
@@ -262,7 +261,7 @@ static ssize_t smp_message_decode_value(SmpValue *value, const uint8_t *buffer,
             value->value.f64 = smp_read_f64(buffer);
             break;
         default:
-            return -EBADMSG;
+            return SMP_ERROR_BAD_MESSAGE;
     }
 
     return argsize;
@@ -378,7 +377,7 @@ void smp_message_init(SmpMessage *msg, uint32_t msgid)
  * @param[in] buffer the buffer to parse
  * @param[in] size of the buffer
  *
- * @return 0 on success, a negative errno on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_init_from_buffer(SmpMessage *msg, const uint8_t *buffer,
         size_t size)
@@ -387,18 +386,18 @@ int smp_message_init_from_buffer(SmpMessage *msg, const uint8_t *buffer,
     size_t offset;
     int i;
 
-    return_val_if_fail(msg != NULL, -EINVAL);
-    return_val_if_fail(buffer != NULL, -EINVAL);
+    return_val_if_fail(msg != NULL, SMP_ERROR_INVALID_PARAM);
+    return_val_if_fail(buffer != NULL, SMP_ERROR_INVALID_PARAM);
 
     if (size < MSG_HEADER_SIZE)
-        return -EBADMSG;
+        return SMP_ERROR_BAD_MESSAGE;
 
     /* parse header */
     smp_message_init(msg, smp_read_uint32(buffer));
     argsize = smp_read_uint32(buffer + 4);
 
     if (size < MSG_HEADER_SIZE + argsize)
-        return -EBADMSG;
+        return SMP_ERROR_BAD_MESSAGE;
 
     offset = MSG_HEADER_SIZE;
     for (i = 0; size - offset > 0 && i < SMP_MESSAGE_MAX_VALUES; i++) {
@@ -414,7 +413,7 @@ int smp_message_init_from_buffer(SmpMessage *msg, const uint8_t *buffer,
 
     if (size - offset > 0) {
         /* we reached the maximum number of values */
-        return -E2BIG;
+        return SMP_ERROR_TOO_BIG;
     }
 
     return 0;
@@ -439,19 +438,18 @@ void smp_message_clear(SmpMessage *msg)
  * @param[in] buffer the destination buffer
  * @param[in] size size of the buffer
  *
- * @return the number of bytes written in the buffer or a negativer errno on
- * error.
+ * @return the number of bytes written in the buffer or a SmpError otherwise.
  */
 ssize_t smp_message_encode(SmpMessage *msg, uint8_t *buffer, size_t size)
 {
     size_t offset = 0;
     int i;
 
-    return_val_if_fail(msg != NULL, -EINVAL);
-    return_val_if_fail(buffer != NULL, -EINVAL);
+    return_val_if_fail(msg != NULL, SMP_ERROR_INVALID_PARAM);
+    return_val_if_fail(buffer != NULL, SMP_ERROR_INVALID_PARAM);
 
     if (size < smp_message_compute_max_encoded_size(msg) + MSG_HEADER_SIZE)
-        return -ENOMEM;
+        return SMP_ERROR_NO_MEM;
 
     /* write header */
     smp_write_uint32(buffer, msg->msgid);
@@ -519,15 +517,15 @@ int smp_message_n_args(SmpMessage *msg)
  * @param[in] index the index of the first argument to get
  * @param[in] ... variable argument
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_get(SmpMessage *msg, int index, ...)
 {
     va_list ap;
     int ret;
 
-    return_val_if_fail(msg != NULL, -EINVAL);
-    return_val_if_fail(index >= 0, -EINVAL);
+    return_val_if_fail(msg != NULL, SMP_ERROR_INVALID_PARAM);
+    return_val_if_fail(index >= 0, SMP_ERROR_INVALID_PARAM);
 
     va_start(ap, index);
 
@@ -535,13 +533,13 @@ int smp_message_get(SmpMessage *msg, int index, ...)
         SmpType type;
 
         if (index >= SMP_MESSAGE_MAX_VALUES) {
-            ret = -ENOENT;
+            ret = SMP_ERROR_NOT_FOUND;
             goto done;
         }
 
         type = va_arg(ap, int);
         if (type != msg->values[index].type) {
-            ret = -EBADF;
+            ret = SMP_ERROR_BAD_TYPE;
             goto done;
         }
 
@@ -629,7 +627,7 @@ int smp_message_get(SmpMessage *msg, int index, ...)
             }
 
             default:
-                ret = -EBADF;
+                ret = SMP_ERROR_BAD_TYPE;
                 goto done;
         }
 
@@ -651,19 +649,19 @@ done:
  * @param[in] index index of the value
  * @param[in] value a pointer to a SmpValue to hold the result
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_get_value(SmpMessage *msg, int index, SmpValue *value)
 {
-    return_val_if_fail(msg != NULL, -EINVAL);
-    return_val_if_fail(index >= 0, -EINVAL);
-    return_val_if_fail(value != NULL, -EINVAL);
+    return_val_if_fail(msg != NULL, SMP_ERROR_INVALID_PARAM);
+    return_val_if_fail(index >= 0, SMP_ERROR_INVALID_PARAM);
+    return_val_if_fail(value != NULL, SMP_ERROR_INVALID_PARAM);
 
     if (index >= SMP_MESSAGE_MAX_VALUES)
-        return -ENOENT;
+        return SMP_ERROR_NOT_FOUND;
 
     if (msg->values[index].type == SMP_TYPE_NONE)
-        return -ENOENT;
+        return SMP_ERROR_NOT_FOUND;
 
     *value = msg->values[index];
     return 0;
@@ -679,7 +677,7 @@ int smp_message_get_value(SmpMessage *msg, int index, SmpValue *value)
  * @param[in] index index of the value
  * @param[in] value a pointer to an uint8 to hold the result
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_get_uint8(SmpMessage *msg, int index, uint8_t *value)
 {
@@ -696,7 +694,7 @@ int smp_message_get_uint8(SmpMessage *msg, int index, uint8_t *value)
  * @param[in] index index of the value
  * @param[in] value a pointer to an int8 to hold the result
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_get_int8(SmpMessage *msg, int index, int8_t *value)
 {
@@ -713,7 +711,7 @@ int smp_message_get_int8(SmpMessage *msg, int index, int8_t *value)
  * @param[in] index index of the value
  * @param[in] value a pointer to an uint16 to hold the result
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_get_uint16(SmpMessage *msg, int index, uint16_t *value)
 {
@@ -730,7 +728,7 @@ int smp_message_get_uint16(SmpMessage *msg, int index, uint16_t *value)
  * @param[in] index index of the value
  * @param[in] value a pointer to an int16 to hold the result
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_get_int16(SmpMessage *msg, int index, int16_t *value)
 {
@@ -747,7 +745,7 @@ int smp_message_get_int16(SmpMessage *msg, int index, int16_t *value)
  * @param[in] index index of the value
  * @param[in] value a pointer to an uint32 to hold the result
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_get_uint32(SmpMessage *msg, int index, uint32_t *value)
 {
@@ -764,7 +762,7 @@ int smp_message_get_uint32(SmpMessage *msg, int index, uint32_t *value)
  * @param[in] index index of the value
  * @param[in] value a pointer to an int32 to hold the result
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_get_int32(SmpMessage *msg, int index, int32_t *value)
 {
@@ -781,7 +779,7 @@ int smp_message_get_int32(SmpMessage *msg, int index, int32_t *value)
  * @param[in] index index of the value
  * @param[in] value a pointer to an uint64 to hold the result
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_get_uint64(SmpMessage *msg, int index, uint64_t *value)
 {
@@ -798,7 +796,7 @@ int smp_message_get_uint64(SmpMessage *msg, int index, uint64_t *value)
  * @param[in] index index of the value
  * @param[in] value a pointer to an int64 to hold the result
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_get_int64(SmpMessage *msg, int index, int64_t *value)
 {
@@ -815,7 +813,7 @@ int smp_message_get_int64(SmpMessage *msg, int index, int64_t *value)
  * @param[in] index index of the value
  * @param[in] value a pointer to a float to hold the result
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_get_float(SmpMessage *msg, int index, float *value)
 {
@@ -832,7 +830,7 @@ int smp_message_get_float(SmpMessage *msg, int index, float *value)
  * @param[in] index index of the value
  * @param[in] value a pointer to a double to hold the result
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_get_double(SmpMessage *msg, int index, double *value)
 {
@@ -850,7 +848,7 @@ int smp_message_get_double(SmpMessage *msg, int index, double *value)
  * @param[in] index index of the value
  * @param[in] value a pointer to a string to hold the result
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_get_cstring(SmpMessage *msg, int index, const char **value)
 {
@@ -869,7 +867,7 @@ int smp_message_get_cstring(SmpMessage *msg, int index, const char **value)
  * @param[in] raw a pointer to hold the result
  * @param[in] size the size of the raw data
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_get_craw(SmpMessage *msg, int index, const uint8_t **raw,
         size_t *size)
@@ -887,15 +885,15 @@ int smp_message_get_craw(SmpMessage *msg, int index, const uint8_t **raw,
  * @param[in] index the index of the first argument to set
  * @param[in] ... variable argument
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_set(SmpMessage *msg, int index, ...)
 {
     va_list ap;
     int ret;
 
-    return_val_if_fail(msg != NULL, -EINVAL);
-    return_val_if_fail(index >= 0, -EINVAL);
+    return_val_if_fail(msg != NULL, SMP_ERROR_INVALID_PARAM);
+    return_val_if_fail(index >= 0, SMP_ERROR_INVALID_PARAM);
 
     va_start(ap, index);
 
@@ -968,16 +966,16 @@ done:
  * @param[in] index index of the value
  * @param[in] value a pointer to a SmpValue to set
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_set_value(SmpMessage *msg, int index, const SmpValue *value)
 {
-    return_val_if_fail(msg != NULL, -EINVAL);
-    return_val_if_fail(index >= 0, -EINVAL);
-    return_val_if_fail(value != NULL, -EINVAL);
+    return_val_if_fail(msg != NULL, SMP_ERROR_INVALID_PARAM);
+    return_val_if_fail(index >= 0, SMP_ERROR_INVALID_PARAM);
+    return_val_if_fail(value != NULL, SMP_ERROR_INVALID_PARAM);
 
     if (index >= SMP_MESSAGE_MAX_VALUES)
-        return -ENOENT;
+        return SMP_ERROR_NOT_FOUND;
 
     msg->values[index] = *value;
     return 0;
@@ -991,7 +989,7 @@ int smp_message_set_value(SmpMessage *msg, int index, const SmpValue *value)
  * @param[in] index index of the value
  * @param[in] value the uint8 to set
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_set_uint8(SmpMessage *msg, int index, uint8_t value)
 {
@@ -1006,7 +1004,7 @@ int smp_message_set_uint8(SmpMessage *msg, int index, uint8_t value)
  * @param[in] index index of the value
  * @param[in] value the int8 to set
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_set_int8(SmpMessage *msg, int index, int8_t value)
 {
@@ -1021,7 +1019,7 @@ int smp_message_set_int8(SmpMessage *msg, int index, int8_t value)
  * @param[in] index index of the value
  * @param[in] value the uint16 to set
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_set_uint16(SmpMessage *msg, int index, uint16_t value)
 {
@@ -1036,7 +1034,7 @@ int smp_message_set_uint16(SmpMessage *msg, int index, uint16_t value)
  * @param[in] index index of the value
  * @param[in] value the int16 to set
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_set_int16(SmpMessage *msg, int index, int16_t value)
 {
@@ -1051,7 +1049,7 @@ int smp_message_set_int16(SmpMessage *msg, int index, int16_t value)
  * @param[in] index index of the value
  * @param[in] value the uint32 to set
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_set_uint32(SmpMessage *msg, int index, uint32_t value)
 {
@@ -1066,7 +1064,7 @@ int smp_message_set_uint32(SmpMessage *msg, int index, uint32_t value)
  * @param[in] index index of the value
  * @param[in] value the int32 to set
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_set_int32(SmpMessage *msg, int index, int32_t value)
 {
@@ -1081,7 +1079,7 @@ int smp_message_set_int32(SmpMessage *msg, int index, int32_t value)
  * @param[in] index index of the value
  * @param[in] value the uint64 to set
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_set_uint64(SmpMessage *msg, int index, uint64_t value)
 {
@@ -1096,7 +1094,7 @@ int smp_message_set_uint64(SmpMessage *msg, int index, uint64_t value)
  * @param[in] index index of the value
  * @param[in] value the int64 to set
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_set_int64(SmpMessage *msg, int index, int64_t value)
 {
@@ -1111,7 +1109,7 @@ int smp_message_set_int64(SmpMessage *msg, int index, int64_t value)
  * @param[in] index index of the value
  * @param[in] value the float to set
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_set_float(SmpMessage *msg, int index, float value)
 {
@@ -1126,7 +1124,7 @@ int smp_message_set_float(SmpMessage *msg, int index, float value)
  * @param[in] index index of the value
  * @param[in] value the double to set
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_set_double(SmpMessage *msg, int index, double value)
 {
@@ -1142,7 +1140,7 @@ int smp_message_set_double(SmpMessage *msg, int index, double value)
  * @param[in] index index of the value
  * @param[in] value the string to set
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_set_cstring(SmpMessage *msg, int index, const char *value)
 {
@@ -1159,7 +1157,7 @@ int smp_message_set_cstring(SmpMessage *msg, int index, const char *value)
  * @param[in] raw the raw data to set
  * @param[in] size the raw data size
  *
- * @return 0 on success, a negative errno value on error.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_message_set_craw(SmpMessage *msg, int index, const uint8_t *raw,
         size_t size)

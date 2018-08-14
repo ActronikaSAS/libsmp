@@ -309,7 +309,7 @@ static int init_uart_device(UARTDevice *device)
 
     if (bit_is_set(*regs->csr_b, TXEN0) || bit_is_set(*regs->csr_b, RXEN0)) {
         /* TX/RX is already enable, error out */
-        return -EBUSY;
+        return SMP_ERROR_BUSY;
     }
 
     /* configure baudrate */
@@ -341,7 +341,7 @@ static int init_uart_device(UARTDevice *device)
 /* SerialDevice API */
 int smp_serial_device_open(SmpSerialDevice *sdev, const char *path)
 {
-    int ret = -ENOENT;
+    int ret = SMP_ERROR_NO_DEVICE;
     uint8_t i;
 
     for (i = 0; i < avr_uart_n_devices; i++) {
@@ -375,7 +375,7 @@ void smp_serial_device_close(SmpSerialDevice *sdev)
 
 intptr_t smp_serial_device_get_fd(SmpSerialDevice *sdev)
 {
-    return (sdev->fd < 0) ? -EBADF : sdev->fd;
+    return (sdev->fd < 0) ? SMP_ERROR_BAD_FD : sdev->fd;
 }
 
 /* Note: AVR UART module has now built-in flow control */
@@ -388,7 +388,7 @@ int smp_serial_device_set_config(SmpSerialDevice *sdev,
 
     dev = get_device_from_fd(sdev->fd);
     if (dev == NULL)
-        return -ENOENT;
+        return SMP_ERROR_NO_DEVICE;
 
     regs = &dev->regs;
 
@@ -428,7 +428,7 @@ ssize_t smp_serial_device_write(SmpSerialDevice *sdev, const void *buf, size_t s
 
     device = get_device_from_fd(sdev->fd);
     if (device == NULL)
-        return -ENOENT;
+        return SMP_ERROR_NO_DEVICE;
 
     regs = &device->regs;
 
@@ -450,7 +450,7 @@ ssize_t smp_serial_device_read(SmpSerialDevice *sdev, void *buf, size_t size)
 
     dev = get_device_from_fd(sdev->fd);
     if (dev == NULL)
-        return -ENOENT;
+        return SMP_ERROR_NO_DEVICE;
 
     for (i = 0; i < size; i++) {
         if (dev->rindex == dev->windex)
@@ -471,7 +471,7 @@ int smp_serial_device_wait(SmpSerialDevice *sdev, int timeout_ms)
 
     dev = get_device_from_fd(sdev->fd);
     if (dev == NULL)
-        return -ENOENT;
+        return SMP_ERROR_NO_DEVICE;
 
     if (dev->rindex != dev->windex)
         return 0;
@@ -495,6 +495,6 @@ int smp_serial_device_wait(SmpSerialDevice *sdev, int timeout_ms)
         if (dev->rindex != dev->windex)
             return 0;
 
-        return -ETIMEDOUT;
+        return SMP_ERROR_TIMEDOUT;
     }
 }

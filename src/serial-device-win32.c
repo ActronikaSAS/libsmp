@@ -17,45 +17,43 @@
 
 #include "config.h"
 
-#include <errno.h>
 #include <Windows.h>
 
 #include "libsmp-private.h"
 
-static int win_error_to_errno(DWORD error)
+static int win_error_to_smp_error(DWORD error)
 {
     switch (error) {
         case ERROR_FILE_NOT_FOUND:
         case ERROR_PATH_NOT_FOUND:
-            return ENOENT;
+            return SMP_ERROR_NOT_FOUND;
         case ERROR_ACCESS_DENIED:
-            return EPERM;
+        case ERROR_INVALID_ACCESS:
+            return SMP_ERROR_PERM;
         case ERROR_INVALID_HANDLE:
-            return EBADF;
+            return SMP_ERROR_BAD_FD;
         case ERROR_NOT_ENOUGH_MEMORY:
         case ERROR_OUTOFMEMORY:
-            return ENOMEM;
-        case ERROR_INVALID_ACCESS:
-            return EACCES;
+            return SMP_ERROR_NO_MEM;
         case ERROR_NOT_SUPPORTED:
-            return ENOSYS;
+            return SMP_ERROR_NOT_SUPPORTED;
         case ERROR_DEV_NOT_EXIST:
-            return ENODEV;
+            return SMP_ERROR_NO_DEVICE;
         case ERROR_FILE_EXISTS:
         case ERROR_ALREADY_EXISTS:
-            return EEXIST;
+            return SMP_ERROR_EXIST;
         case ERROR_INVALID_PARAMETER:
-            return EINVAL;
+            return SMP_ERROR_INVALID_PARAM;
         case ERROR_BUSY:
-            return EBUSY;
+            return SMP_ERROR_BUSY;
         default:
-            return EFAULT;
+            return SMP_ERROR_OTHER;
     }
 }
 
-static int get_last_error_as_errno()
+static int get_last_error_as_smp_error()
 {
-    return win_error_to_errno(GetLastError());
+    return win_error_to_smp_error(GetLastError());
 }
 
 /* SerialDevice API */
@@ -70,13 +68,13 @@ int smp_serial_device_open(SmpSerialDevice *device, const char *path)
     handle = CreateFile(path, GENERIC_READ | GENERIC_WRITE, 0, NULL,
             OPEN_EXISTING, 0, NULL);
     if (handle == INVALID_HANDLE_VALUE)
-        return -get_last_error_as_errno();
+        return -get_last_error_as_smp_error();
 
     dcb.DCBlength = sizeof(DCB);
 
     bret = GetCommState(handle, &dcb);
     if (!bret) {
-        ret = get_last_error_as_errno();
+        ret = get_last_error_as_smp_error();
         CloseHandle(handle);
         return -ret;
     }
@@ -94,7 +92,7 @@ int smp_serial_device_open(SmpSerialDevice *device, const char *path)
 
     bret = SetCommState(handle, &dcb);
     if (!bret) {
-        ret = get_last_error_as_errno();
+        ret = get_last_error_as_smp_error();
         CloseHandle(handle);
         return -ret;
     }
@@ -108,7 +106,7 @@ int smp_serial_device_open(SmpSerialDevice *device, const char *path)
 
     bret = SetCommTimeouts(handle, &timeouts);
     if (!bret) {
-        ret = get_last_error_as_errno();
+        ret = get_last_error_as_smp_error();
         CloseHandle(handle);
         return -ret;
     }
@@ -138,7 +136,7 @@ int smp_serial_device_set_config(SmpSerialDevice *device,
 
     bret = GetCommState(device->handle, &dcb);
     if (!bret)
-        return -get_last_error_as_errno();
+        return -get_last_error_as_smp_error();
 
     switch (baudrate) {
         case SMP_SERIAL_FRAME_BAUDRATE_1200:
@@ -191,7 +189,7 @@ int smp_serial_device_set_config(SmpSerialDevice *device,
 
     bret = SetCommState(device->handle, &dcb);
     if (!bret)
-        return -get_last_error_as_errno();
+        return -get_last_error_as_smp_error();
 
     return 0;
 }
@@ -204,7 +202,7 @@ ssize_t smp_serial_device_write(SmpSerialDevice *device, const void *buf,
 
     bret = WriteFile(device->handle, buf, size, &wbytes, NULL);
     if (!bret)
-        return -get_last_error_as_errno();
+        return -get_last_error_as_smp_error();
 
     return wbytes;
 }
@@ -216,7 +214,7 @@ ssize_t smp_serial_device_read(SmpSerialDevice *device, void *buf, size_t size)
 
     bret = ReadFile(device->handle, buf, size, &rbytes, NULL);
     if (!bret)
-        return get_last_error_as_errno();
+        return get_last_error_as_smp_error();
 
 
     return rbytes;
@@ -234,10 +232,10 @@ int smp_serial_device_wait(SmpSerialDevice *device, int timeout_ms)
         case WAIT_OBJECT_0:
             return 0;
         case WAIT_TIMEOUT:
-            return -ETIMEDOUT;
+            return SMP_ERROR_TIMEDOUT;
         case WAIT_ABANDONED:
         case WAIT_FAILED:
         default:
-            return -EFAULT;
+            return SMP_ERROR_OTHER;
     }
 }

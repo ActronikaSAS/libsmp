@@ -31,13 +31,45 @@
 
 #include "libsmp-private.h"
 
+static SmpError errno_to_smp_error(int err)
+{
+    switch (err) {
+        case EINVAL:
+            return SMP_ERROR_INVALID_PARAM;
+        case EBADMSG:
+            return SMP_ERROR_BAD_MESSAGE;
+        case E2BIG:
+            return SMP_ERROR_TOO_BIG;
+        case ENOMEM:
+            return SMP_ERROR_NO_MEM;
+        case ENOENT:
+            return SMP_ERROR_NO_DEVICE;
+        case ETIMEDOUT:
+            return SMP_ERROR_TIMEDOUT;
+        case EBADF:
+            return SMP_ERROR_BAD_FD;
+        case ENOSYS:
+            return SMP_ERROR_NOT_SUPPORTED;
+        case EBUSY:
+            return SMP_ERROR_BUSY;
+        case EPERM:
+            return SMP_ERROR_PERM;
+        case EAGAIN:
+            return SMP_ERROR_WOULD_BLOCK;
+        case EIO:
+            return SMP_ERROR_IO;
+        default:
+            return SMP_ERROR_OTHER;
+    }
+}
+
 int smp_serial_device_open(SmpSerialDevice *device, const char *path)
 {
     int fd;
 
     fd = open(path, O_RDWR | O_NONBLOCK);
     if (fd < 0)
-        return -errno;
+        return errno_to_smp_error(errno);
 
 #ifdef HAVE_TERMIOS_H
     if (isatty(fd)) {
@@ -47,7 +79,7 @@ int smp_serial_device_open(SmpSerialDevice *device, const char *path)
         ret = tcgetattr(fd, &term);
         if (ret < 0) {
             close(fd);
-            return -errno;
+            return errno_to_smp_error(errno);
         }
 
         cfsetispeed(&term, B115200);
@@ -57,7 +89,7 @@ int smp_serial_device_open(SmpSerialDevice *device, const char *path)
         ret = tcsetattr(fd, TCSANOW, &term);
         if (ret < 0) {
             close(fd);
-            return -errno;
+            return errno_to_smp_error(errno);
         }
     }
 #endif
@@ -74,14 +106,14 @@ void smp_serial_device_close(SmpSerialDevice *device)
 
 intptr_t smp_serial_device_get_fd(SmpSerialDevice *device)
 {
-    return (device->fd < 0) ? -EBADF : device->fd;
+    return (device->fd < 0) ? SMP_ERROR_BAD_FD : device->fd;
 }
 
 int smp_serial_device_set_config(SmpSerialDevice *device,
         SmpSerialFrameBaudrate baudrate, SmpSerialFrameParity parity,
         int flow_control)
 {
-    int ret = -ENOSYS;
+    int ret = SMP_ERROR_NOT_SUPPORTED;
 
 #ifdef HAVE_TERMIOS_H
     if (isatty(device->fd)) {
@@ -90,7 +122,7 @@ int smp_serial_device_set_config(SmpSerialDevice *device,
 
         ret = tcgetattr(device->fd, &term);
         if (ret < 0)
-            return -errno;
+            return errno_to_smp_error(errno);
 
         switch (baudrate) {
             case SMP_SERIAL_FRAME_BAUDRATE_1200:
@@ -147,7 +179,7 @@ int smp_serial_device_set_config(SmpSerialDevice *device,
 
         ret = tcsetattr(device->fd, TCSANOW, &term);
         if (ret < 0)
-            return -errno;
+            return errno_to_smp_error(errno);
 
         ret = 0;
     }
@@ -163,7 +195,7 @@ ssize_t smp_serial_device_write(SmpSerialDevice *device, const void *buf,
 
     ret = write(device->fd, buf, size);
 
-    return (ret < 0) ? -errno : ret;
+    return (ret < 0) ? errno_to_smp_error(errno) : ret;
 }
 
 ssize_t smp_serial_device_read(SmpSerialDevice *device, void *buf, size_t size)
@@ -172,7 +204,7 @@ ssize_t smp_serial_device_read(SmpSerialDevice *device, void *buf, size_t size)
 
     ret = read(device->fd, buf, size);
 
-    return (ret < 0) ? -errno : ret;
+    return (ret < 0) ? errno_to_smp_error(errno) : ret;
 }
 
 int smp_serial_device_wait(SmpSerialDevice *device, int timeout_ms)
@@ -187,12 +219,12 @@ int smp_serial_device_wait(SmpSerialDevice *device, int timeout_ms)
 
     ret = poll(&pfd, 1, timeout_ms);
     if (ret < 0)
-        return -errno;
+        return errno_to_smp_error(errno);
     else if (ret == 0)
-        return -ETIMEDOUT;
+        return SMP_ERROR_TIMEDOUT;
     else
         return 0;
 #else
-    return -ENOSYS;
+    return SMP_ERROR_NOT_SUPPORTED;
 #endif
 }

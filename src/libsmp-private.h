@@ -20,12 +20,6 @@
 
 #include "serial-device.h"
 
-#if defined(__AVR) || defined(__TEENSY)
-#include "libsmp-private-avr.h"
-#else
-#include "libsmp-private-posix.h"
-#endif
-
 #define return_if_fail(expr) \
     do { \
         if (!(expr)) \

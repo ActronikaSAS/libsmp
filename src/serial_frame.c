@@ -25,7 +25,6 @@
 #include "config.h"
 
 #include "libsmp.h"
-#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -178,18 +177,18 @@ static int smp_serial_frame_write_byte(uint8_t *dest, uint8_t byte)
  * @param[in] cbs callback to use by the decoder
  * @param[in] userdata a pointer to userdata which will be passed in callbacks.
  *
- * @return 0 on success, a negative errno value otherwise.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_serial_frame_init(SmpSerialFrameContext *ctx, const char *device,
         const SmpSerialFrameDecoderCallbacks *cbs, void *userdata)
 {
     int ret;
 
-    return_val_if_fail(ctx != NULL, -EINVAL);
-    return_val_if_fail(device != NULL, -EINVAL);
-    return_val_if_fail(cbs != NULL, -EINVAL);
-    return_val_if_fail(cbs->new_frame != NULL, -EINVAL);
-    return_val_if_fail(cbs->error != NULL, -EINVAL);
+    return_val_if_fail(ctx != NULL, SMP_ERROR_INVALID_PARAM);
+    return_val_if_fail(device != NULL, SMP_ERROR_INVALID_PARAM);
+    return_val_if_fail(cbs != NULL, SMP_ERROR_INVALID_PARAM);
+    return_val_if_fail(cbs->new_frame != NULL, SMP_ERROR_INVALID_PARAM);
+    return_val_if_fail(cbs->error != NULL, SMP_ERROR_INVALID_PARAM);
 
     ret = smp_serial_device_open(&ctx->device, device);
     if (ret < 0)
@@ -225,13 +224,13 @@ void smp_serial_frame_deinit(SmpSerialFrameContext *ctx)
  * @param[in] parity the parity configuration
  * @param[in] flow_control 1 to enable flow control, 0 to disable
  *
- * @return 0 on success, a negative errno otherwise.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_serial_frame_set_config(SmpSerialFrameContext *ctx,
         SmpSerialFrameBaudrate baudrate, SmpSerialFrameParity parity,
         int flow_control)
 {
-    return_val_if_fail(ctx != NULL, -EINVAL);
+    return_val_if_fail(ctx != NULL, SMP_ERROR_INVALID_PARAM);
 
     return smp_serial_device_set_config(&ctx->device, baudrate, parity,
             flow_control);
@@ -243,8 +242,7 @@ int smp_serial_frame_set_config(SmpSerialFrameContext *ctx,
  *
  * @param[in] ctx the SmpSerialFrameContext
  *
- * @return the fd (or a handle on Win32) on success, a negative errno value
- * otherwise (or INVALID_HANDLER_VALUE on Win32).
+ * @return the fd (or a handle on Win32) on success, a SmpError otherwise.
  */
 intptr_t smp_serial_frame_get_fd(SmpSerialFrameContext *ctx)
 {
@@ -261,7 +259,7 @@ intptr_t smp_serial_frame_get_fd(SmpSerialFrameContext *ctx)
  * @param[in] buf the payload to send
  * @param[in] size size of the payload to send
  *
- * @return 0 on success, a negative errno value otherwise.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_serial_frame_send(SmpSerialFrameContext *ctx, const uint8_t *buf,
         size_t size)
@@ -272,8 +270,8 @@ int smp_serial_frame_send(SmpSerialFrameContext *ctx, const uint8_t *buf,
     size_t i;
     int ret;
 
-    return_val_if_fail(ctx != NULL, -EINVAL);
-    return_val_if_fail(buf != NULL, -EINVAL);
+    return_val_if_fail(ctx != NULL, SMP_ERROR_INVALID_PARAM);
+    return_val_if_fail(buf != NULL, SMP_ERROR_INVALID_PARAM);
 
     /* first, compute our payload size and make sure it doen't exceed our buffer
      * size. We need at least three extra bytes (START, END and CRC) + a number
@@ -286,7 +284,7 @@ int smp_serial_frame_send(SmpSerialFrameContext *ctx, const uint8_t *buf,
     }
 
     if (payload_size > SMP_SERIAL_FRAME_MAX_FRAME_SIZE)
-        return -ENOMEM;
+        return SMP_ERROR_NO_MEM;
 
     /* prepare the buffer */
     txbuf[offset++] = START_BYTE;
@@ -303,7 +301,7 @@ int smp_serial_frame_send(SmpSerialFrameContext *ctx, const uint8_t *buf,
         return ret;
 
     if ((size_t) ret != offset)
-        return -EFAULT;
+        return SMP_ERROR_OTHER;
 
     return 0;
 }
@@ -316,7 +314,7 @@ int smp_serial_frame_send(SmpSerialFrameContext *ctx, const uint8_t *buf,
  *
  * @param[in] ctx the SmpSerialFrameContext
  *
- * @return 0 on success, a negative errno otherwise.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_serial_frame_process_recv_fd(SmpSerialFrameContext *ctx)
 {
@@ -326,10 +324,10 @@ int smp_serial_frame_process_recv_fd(SmpSerialFrameContext *ctx)
     while (1) {
         rbytes = smp_serial_device_read(&ctx->device, &c, 1);
         if (rbytes < 0) {
-            if (rbytes == -EWOULDBLOCK || rbytes == -EAGAIN)
+            if (rbytes == SMP_ERROR_WOULD_BLOCK)
                 return 0;
 
-            return -errno;
+            return rbytes;
         } else if (rbytes == 0) {
             return 0;
         }
@@ -348,7 +346,7 @@ int smp_serial_frame_process_recv_fd(SmpSerialFrameContext *ctx)
  * @param[in] timeout_ms a timeout in milliseconds. A negative value means no
  *                       timeout
  *
- * @return 0 on success, a negative errno otherwise.
+ * @return 0 on success, a SmpError otherwise.
  */
 int smp_serial_frame_wait_and_process(SmpSerialFrameContext *ctx,
         int timeout_ms)

@@ -52,6 +52,47 @@ typedef long ssize_t;
 typedef signed __int64 ssize_t;
 #endif
 
+typedef enum
+{
+    /** No error */
+    SMP_ERROR_NONE = 0,
+    /** Invalid parameter */
+    SMP_ERROR_INVALID_PARAM = -1,
+    /** Not enough memory */
+    SMP_ERROR_NO_MEM = -2,
+    /** No such device */
+    SMP_ERROR_NO_DEVICE = -3,
+    /** Entity not found */
+    SMP_ERROR_NOT_FOUND = -4,
+    /** Device busy */
+    SMP_ERROR_BUSY = -5,
+    /** Permission denied */
+    SMP_ERROR_PERM = -6,
+    /** Bad file descriptor */
+    SMP_ERROR_BAD_FD = -7,
+    /** Operation not supported */
+    SMP_ERROR_NOT_SUPPORTED = -8,
+    /** Operation would block */
+    SMP_ERROR_WOULD_BLOCK = -9,
+    /** IO error */
+    SMP_ERROR_IO = -10,
+    /** Entity already exist */
+    SMP_ERROR_EXIST = -11,
+    /** Too big */
+    SMP_ERROR_TOO_BIG = -12,
+    /** Operation timed out */
+    SMP_ERROR_TIMEDOUT = -13,
+    /** Overflow */
+    SMP_ERROR_OVERFLOW = -14,
+    /** Bad message */
+    SMP_ERROR_BAD_MESSAGE = -15,
+    /** Entity is not the right type */
+    SMP_ERROR_BAD_TYPE = -16,
+
+    /** Other error */
+    SMP_ERROR_OTHER = -100,
+} SmpError;
+
 /* Message */
 
 /**

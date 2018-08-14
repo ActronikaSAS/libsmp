@@ -80,19 +80,19 @@ static void test_smp_serial_frame_init(void)
 
     /* calling with invalid args shall fails */
     ret = smp_serial_frame_init(NULL, NULL, NULL, NULL);
-    CU_ASSERT_EQUAL(ret, -EINVAL);
+    CU_ASSERT_EQUAL(ret, SMP_ERROR_INVALID_PARAM);
 
     ret = smp_serial_frame_init(NULL, FIFO_PATH, cbs, NULL);
-    CU_ASSERT_EQUAL(ret, -EINVAL);
+    CU_ASSERT_EQUAL(ret, SMP_ERROR_INVALID_PARAM);
 
     ret = smp_serial_frame_init(&ctx, NULL, cbs, NULL);
-    CU_ASSERT_EQUAL(ret, -EINVAL);
+    CU_ASSERT_EQUAL(ret, SMP_ERROR_INVALID_PARAM);
 
     ret = smp_serial_frame_init(&ctx, "/sfnjiejdfeifsd", cbs, NULL);
-    CU_ASSERT_EQUAL(ret, -ENOENT);
+    CU_ASSERT_EQUAL(ret, SMP_ERROR_NO_DEVICE);
 
     ret = smp_serial_frame_init(&ctx, FIFO_PATH, NULL, NULL);
-    CU_ASSERT_EQUAL(ret, -EINVAL);
+    CU_ASSERT_EQUAL(ret, SMP_ERROR_INVALID_PARAM);
 
     /* calling with good argument shall pass */
     ret = smp_serial_frame_init(&ctx, FIFO_PATH, cbs, NULL);
@@ -119,10 +119,10 @@ static void test_smp_serial_frame_send_simple(void)
 
     /* calling without context or buffer should fail */
     ret = smp_serial_frame_send(NULL, (const uint8_t *) str, strlen(str) + 1);
-    CU_ASSERT_EQUAL(ret, -EINVAL);
+    CU_ASSERT_EQUAL(ret, SMP_ERROR_INVALID_PARAM);
 
     ret = smp_serial_frame_send(&ctx, NULL, strlen(str) + 1);
-    CU_ASSERT_EQUAL(ret, -EINVAL);
+    CU_ASSERT_EQUAL(ret, SMP_ERROR_INVALID_PARAM);
 
     /* try to send a message and read it back */
     ret = smp_serial_frame_send(&ctx, (const uint8_t *) str, strlen(str) + 1);
@@ -177,7 +177,7 @@ static void test_smp_serial_frame_send(void)
 
     /* make sure big payload is rejected */
     ret = smp_serial_frame_send(&ctx, big_payload, sizeof(big_payload));
-    CU_ASSERT_EQUAL(ret, -ENOMEM);
+    CU_ASSERT_EQUAL(ret, SMP_ERROR_NO_MEM);
 
     /* make sure payload with magic bytes are handled correctly */
     ret = smp_serial_frame_send(&ctx, payload, sizeof(payload));
