@@ -470,6 +470,8 @@ int smp_serial_device_wait(SmpSerialDevice *sdev, int timeout_ms)
     UARTDevice *dev;
 
     dev = get_device_from_fd(sdev->fd);
+    if (dev == NULL)
+        return -ENOENT;
 
     if (dev->rindex != dev->windex)
         return 0;
