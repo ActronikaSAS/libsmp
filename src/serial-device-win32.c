@@ -16,6 +16,7 @@
  */
 
 #include "config.h"
+#include "serial-device.h"
 
 #include <Windows.h>
 

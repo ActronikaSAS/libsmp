@@ -18,8 +18,6 @@
 #ifndef LIBSMP_PRIVATE_H
 #define LIBSMP_PRIVATE_H
 
-#include "serial-device.h"
-
 #define return_if_fail(expr) \
     do { \
         if (!(expr)) \

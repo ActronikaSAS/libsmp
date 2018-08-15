@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include "serial-device.h"
+
 #include "Arduino.h"
 #include "HardwareSerial.h"
 #include "libsmp-private.h"

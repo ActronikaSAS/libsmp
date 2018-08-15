@@ -17,6 +17,8 @@
 
 #include "config.h"
 
+#include "serial-device.h"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
