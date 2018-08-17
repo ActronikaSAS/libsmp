@@ -448,7 +448,7 @@ ssize_t smp_message_encode(SmpMessage *msg, uint8_t *buffer, size_t size)
     return_val_if_fail(msg != NULL, SMP_ERROR_INVALID_PARAM);
     return_val_if_fail(buffer != NULL, SMP_ERROR_INVALID_PARAM);
 
-    if (size < smp_message_compute_max_encoded_size(msg) + MSG_HEADER_SIZE)
+    if (size < smp_message_get_encoded_size(msg))
         return SMP_ERROR_NO_MEM;
 
     /* write header */
@@ -468,6 +468,11 @@ ssize_t smp_message_encode(SmpMessage *msg, uint8_t *buffer, size_t size)
     smp_write_uint32(buffer + 4, offset - MSG_HEADER_SIZE);
 
     return offset;
+}
+
+size_t smp_message_get_encoded_size(SmpMessage *message)
+{
+    return smp_message_compute_max_encoded_size(message) + MSG_HEADER_SIZE;
 }
 
 /**
