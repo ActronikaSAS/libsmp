@@ -20,7 +20,10 @@
 
 #include <CUnit/CUnit.h>
 
+#define DEFINE_TEST(func) { #func, func }
+
 CU_ErrorCode serial_frame_test_register(void);
+CU_ErrorCode serial_protocol_test_register(void);
 CU_ErrorCode message_test_register(void);
 
 #endif
