@@ -177,7 +177,7 @@ static void test_smp_serial_frame_send(void)
 
     /* make sure big payload is rejected */
     ret = smp_serial_frame_send(&ctx, big_payload, sizeof(big_payload));
-    CU_ASSERT_EQUAL(ret, SMP_ERROR_NO_MEM);
+    CU_ASSERT_EQUAL(ret, SMP_ERROR_OVERFLOW);
 
     /* make sure payload with magic bytes are handled correctly */
     ret = smp_serial_frame_send(&ctx, payload, sizeof(payload));
