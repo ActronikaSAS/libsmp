@@ -367,6 +367,37 @@ SMP_API int smp_context_send_message(SmpContext *ctx, SmpMessage *msg);
 SMP_API int smp_context_process_fd(SmpContext *ctx);
 SMP_API int smp_context_wait_and_process(SmpContext *ctx, int timeout_ms);
 
+/* Buffer API */
+typedef struct SmpBuffer SmpBuffer;
+
+/**
+ * \ingroup buffer
+ * Callback used to free data contained in buffer.
+ *
+ * @param[in] buffer the SmpBuffer
+ */
+typedef void (*SmpBufferFreeFunc)(SmpBuffer *buffer);
+
+typedef struct SmpSerialProtocolDecoder SmpSerialProtocolDecoder;
+
+/* Static API */
+#ifdef SMP_ENABLE_STATIC_API
+#include <libsmp-static.h>
+
+SMP_API SmpBuffer *smp_buffer_new_from_static(SmpStaticBuffer *sbuffer,
+                size_t struct_size, uint8_t *data, size_t maxsize,
+                SmpBufferFreeFunc free_func);
+
+SMP_API SmpSerialProtocolDecoder *
+smp_serial_protocol_decoder_new_from_static(SmpStaticSerialProtocolDecoder *sdec,
+                size_t struct_size, uint8_t *buf, size_t bufsize);
+
+SMP_API SmpContext *smp_context_new_from_static(SmpStaticContext *sctx,
+                size_t struct_size, const SmpEventCallbacks *cbs,
+                void *userdata, SmpSerialProtocolDecoder *decoder,
+                SmpBuffer *serial_tx, SmpBuffer *msg_tx);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

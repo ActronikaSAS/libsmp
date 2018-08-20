@@ -35,6 +35,7 @@ cpp_warning_flags = common_warning_flags
 libsmp_incdir = include_directories(['include'])
 
 libsmp_src = [
+    'src/buffer.c',
     'src/context.c',
     'src/message.c',
     'src/serial_frame.c',
@@ -101,11 +102,20 @@ libsmp_config_incdir = include_directories('.')
 
 static_obj_list = [
     # objname, header file, token
+    ['SmpBuffer', '"buffer.h"', 'smp-buffer-size'],
+    ['SmpContext', '"context.h"', 'smp-context-size'],
     ['SmpSerialProtocolDecoder', '"serial-protocol.h"', 'smp-serial-protocol-decoder-size'],
     ]
 
 cdata = configuration_data()
 foreach obj : static_obj_list
+  args = [
+      '-DSMP_DISABLE_LEGACY_API',
+      # builddir (which contains libsmp-config.h) is not included when checking
+      # sizeof so:
+      '-I' + meson.current_build_dir()
+      ]
+
   incdir = [
       libsmp_incdir,
       include_directories('src'),
@@ -115,9 +125,7 @@ foreach obj : static_obj_list
   size = c_compiler.sizeof(obj[0],
       prefix: '#include ' + obj[1],
       include_directories: incdir,
-      # builddir (which contains libsmp-config.h) is not included when checking
-      # sizeof so:
-      args: '-I' + meson.current_build_dir())
+      args: args)
 
   if size <= 0
     error('failed to determine ' + obj[0] + ' size')
@@ -163,7 +171,7 @@ add_project_arguments(c_compiler.get_supported_arguments(c_warning_flags),
 add_project_arguments(cpp_compiler.get_supported_arguments(cpp_warning_flags),
     language: 'cpp')
 
-libsmp_flags = []
+libsmp_flags = ['-DSMP_ENABLE_STATIC_API']
 if get_option('default_library') == 'shared'
   libsmp_flags += '-DSMP_EXPORT_API'
 endif

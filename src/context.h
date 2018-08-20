@@ -33,6 +33,10 @@ struct SmpContext
     void *userdata;
 
     bool opened;
+
+    bool statically_allocated;
+    SmpBuffer *msg_tx;
+    SmpBuffer *serial_tx;
 };
 
 #endif

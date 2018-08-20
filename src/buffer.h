@@ -15,31 +15,22 @@
  * limitations under the License.
  */
 
-#ifndef LIBSMP_STATIC_H
-#define LIBSMP_STATIC_H
+#ifndef BUFFER_H
+#define BUFFER_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <stdbool.h>
 
-typedef struct SmpStaticBuffer SmpStaticBuffer;
-typedef struct SmpStaticContext SmpStaticContext;
-typedef struct SmpStaticSerialProtocolDecoder SmpStaticSerialProtocolDecoder;
+#include "libsmp.h"
 
-struct SmpStaticBuffer {
-    uint8_t data[@smp-buffer-size@];
+struct SmpBuffer
+{
+    uint8_t *data;     /* pointer to the data */
+    size_t maxsize;    /* size of the memory pointed by data */
+    SmpBufferFreeFunc free;
+    bool statically_allocated;
 };
 
-struct SmpStaticContext {
-    uint8_t data[@smp-context-size@];
-};
-
-struct SmpStaticSerialProtocolDecoder {
-    uint8_t data[@smp-serial-protocol-decoder-size@];
-};
-
-#ifdef __cplusplus
-}
-#endif
+SmpBuffer *smp_buffer_new_allocate(size_t size);
+void smp_buffer_free(SmpBuffer *buffer);
 
 #endif

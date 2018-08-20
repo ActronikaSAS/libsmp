@@ -16,6 +16,7 @@
  */
 
 #include <CUnit/CUnit.h>
+#define SMP_ENABLE_STATIC_API
 #include <libsmp.h>
 #include <unistd.h>
 #include <sys/types.h>

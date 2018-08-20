@@ -18,6 +18,7 @@
 #ifndef SERIAL_PROTOCOL_H
 #define SERIAL_PROTOCOL_H
 
+#include "libsmp.h"
 #include "libsmp-private.h"
 
 #include <stdbool.h>
@@ -30,7 +31,7 @@ typedef enum
     SMP_SERIAL_PROTOCOL_DECODER_STATE_IN_FRAME_ESC,
 } SmpSerialProtocolDecoderState;
 
-typedef struct
+struct SmpSerialProtocolDecoder
 {
     SmpSerialProtocolDecoderState state;
 
@@ -39,7 +40,7 @@ typedef struct
     size_t offset;
 
     bool statically_allocated;
-} SmpSerialProtocolDecoder;
+};
 
 typedef struct SmpStaticSerialProtocolDecoder SmpStaticSerialProtocolDecoder;
 
@@ -51,11 +52,6 @@ int smp_serial_protocol_decoder_process_byte(SmpSerialProtocolDecoder *decoder,
 /* Encoder API */
 ssize_t smp_serial_protocol_encode(const uint8_t *inbuf, size_t insize,
         uint8_t **outbuf, size_t outsize);
-
-/* Static API */
-SmpSerialProtocolDecoder *
-smp_serial_protocol_decoder_new_from_static(SmpStaticSerialProtocolDecoder *sdec,
-        size_t struct_size, uint8_t *buf, size_t bufsize);
 
 #ifdef __cplusplus
 }

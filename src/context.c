@@ -25,7 +25,18 @@
 #include "libsmp-private.h"
 #include <stdlib.h>
 
+#include "buffer.h"
 #include "serial-device.h"
+
+static void smp_context_init(SmpContext *ctx, SmpSerialProtocolDecoder *decoder,
+        const SmpEventCallbacks *cbs, void *userdata, bool statically_allocated)
+{
+    ctx->decoder = decoder;
+    ctx->cbs = *cbs;
+    ctx->userdata = userdata;
+    ctx->opened = false;
+    ctx->statically_allocated = statically_allocated;
+}
 
 static void smp_context_notify_new_message(SmpContext *ctx, SmpMessage *msg)
 {
@@ -68,6 +79,7 @@ static void smp_context_process_serial_frame(SmpContext *ctx, uint8_t *frame,
 SmpContext *smp_context_new(const SmpEventCallbacks *cbs, void *userdata)
 {
     SmpContext *ctx;
+    SmpSerialProtocolDecoder *decoder;
 
     return_val_if_fail(cbs != NULL, NULL);
 
@@ -75,15 +87,50 @@ SmpContext *smp_context_new(const SmpEventCallbacks *cbs, void *userdata)
     if (ctx == NULL)
         return NULL;
 
-    ctx->decoder = smp_serial_protocol_decoder_new(0);
-    if (ctx->decoder == NULL) {
+    decoder = smp_serial_protocol_decoder_new(0);
+    if (decoder == NULL) {
         free(ctx);
         return NULL;
     }
 
-    ctx->cbs = *cbs;
-    ctx->userdata = userdata;
-    ctx->opened = false;
+    smp_context_init(ctx, decoder, cbs, userdata, false);
+    return ctx;
+}
+
+/**
+ * \ingroup context
+ * Create a new SmpContext object from a static storage.
+ *
+ * @param[in] sctx a SmpStaticContext
+ * @param[in] struct_size the size of sctx
+ * @param[in] cbs callback to use to notify events
+ * @param[in] userdata a pointer to userdata which will be passed to callback
+ * @param[in] decoder a SmpSerialProtocolDecoder to use with this context
+ * @param[in] serial_tx a SmpBuffer to use as serial TX buffer
+ * @param[in] msg_tx a SmpBuffer to use as msg TX buffer
+ * @param[in] msg_rx a SmpMessage to use for reception
+ *
+ * @return a SmpContext or NULL on error.
+ */
+SmpContext *smp_context_new_from_static(SmpStaticContext *sctx,
+        size_t struct_size, const SmpEventCallbacks *cbs, void *userdata,
+        SmpSerialProtocolDecoder *decoder, SmpBuffer *serial_tx,
+        SmpBuffer *msg_tx)
+{
+    SmpContext *ctx = (SmpContext *) sctx;
+
+    return_val_if_fail(sctx != NULL, NULL);
+    return_val_if_fail(struct_size >= sizeof(SmpContext), NULL);
+    return_val_if_fail(cbs != NULL, NULL);
+    return_val_if_fail(decoder != NULL, NULL);
+    return_val_if_fail(msg_tx != NULL, NULL);
+    return_val_if_fail(serial_tx != NULL, NULL);
+
+    smp_context_init(ctx, decoder, cbs, userdata, true);
+
+    ctx->serial_tx = serial_tx;
+    ctx->msg_tx = msg_tx;
+
     return ctx;
 }
 
@@ -191,9 +238,10 @@ intptr_t smp_context_get_fd(SmpContext *ctx)
  */
 int smp_context_send_message(SmpContext *ctx, SmpMessage *msg)
 {
-    uint8_t *msgbuf;
+    SmpBuffer *msgbuf;
     size_t msgsize;
     uint8_t *serial_buf = NULL;
+    size_t serial_bufsize = 0;
     ssize_t encoded_size;
     ssize_t wbytes;
     int ret;
@@ -203,20 +251,33 @@ int smp_context_send_message(SmpContext *ctx, SmpMessage *msg)
     return_val_if_fail(ctx->opened, SMP_ERROR_BAD_FD);
 
     /* step 1: encode the message */
+    msgbuf = ctx->msg_tx;
     msgsize = smp_message_get_encoded_size(msg);
-    msgbuf = malloc(msgsize);
-    if (msgbuf == NULL)
-        return SMP_ERROR_NO_MEM;
 
-    encoded_size = smp_message_encode(msg, msgbuf, msgsize);
+    if (msgbuf == NULL) {
+        /* no user provided buffer, alloc */
+        msgbuf = smp_buffer_new_allocate(msgsize);
+        if (msgbuf == NULL)
+            return SMP_ERROR_NO_MEM;
+    } else if (msgbuf->maxsize < msgsize) {
+        /* check size */
+        return SMP_ERROR_OVERFLOW;
+    }
+
+    encoded_size = smp_message_encode(msg, msgbuf->data, msgbuf->maxsize);
     if (encoded_size < 0) {
         ret = encoded_size;
         goto done;
     }
 
     /* step 2: encode the message for the serial */
-    encoded_size = smp_serial_protocol_encode(msgbuf, encoded_size, &serial_buf,
-            0);
+    if (ctx->serial_tx != NULL) {
+        serial_buf = ctx->serial_tx->data;
+        serial_bufsize = ctx->serial_tx->maxsize;
+    }
+
+    encoded_size = smp_serial_protocol_encode(msgbuf->data, encoded_size,
+            &serial_buf, serial_bufsize);
     if (encoded_size < 0) {
         ret = encoded_size;
         goto done;
@@ -235,8 +296,16 @@ int smp_context_send_message(SmpContext *ctx, SmpMessage *msg)
     ret = 0;
 
 done:
-    free(serial_buf);
-    free(msgbuf);
+    if (ctx->msg_tx == NULL) {
+        /* we have allocated buffer so free it */
+        smp_buffer_free(msgbuf);
+    }
+
+    if (ctx->serial_tx == NULL) {
+        /* we have allocated buffer so free it */
+        free(serial_buf);
+    }
+
     return ret;
 }
 
