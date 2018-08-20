@@ -127,8 +127,7 @@ intptr_t smp_serial_device_get_fd(SmpSerialDevice *device)
 }
 
 int smp_serial_device_set_config(SmpSerialDevice *device,
-        SmpSerialFrameBaudrate baudrate, SmpSerialFrameParity parity,
-        int flow_control)
+        SmpSerialBaudrate baudrate, SmpSerialParity parity, int flow_control)
 {
     DCB dcb = { 0, };
     BOOL bret;
@@ -140,43 +139,43 @@ int smp_serial_device_set_config(SmpSerialDevice *device,
         return -get_last_error_as_smp_error();
 
     switch (baudrate) {
-        case SMP_SERIAL_FRAME_BAUDRATE_1200:
+        case SMP_SERIAL_BAUDRATE_1200:
             dcb.BaudRate = CBR_1200;
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_2400:
+        case SMP_SERIAL_BAUDRATE_2400:
             dcb.BaudRate = CBR_2400;
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_4800:
+        case SMP_SERIAL_BAUDRATE_4800:
             dcb.BaudRate = CBR_4800;
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_9600:
+        case SMP_SERIAL_BAUDRATE_9600:
             dcb.BaudRate = CBR_9600;
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_19200:
+        case SMP_SERIAL_BAUDRATE_19200:
             dcb.BaudRate = CBR_19200;
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_38400:
+        case SMP_SERIAL_BAUDRATE_38400:
             dcb.BaudRate = CBR_38400;
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_57600:
+        case SMP_SERIAL_BAUDRATE_57600:
             dcb.BaudRate = CBR_57600;
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_115200:
+        case SMP_SERIAL_BAUDRATE_115200:
         default:
             dcb.BaudRate = CBR_115200;
             break;
     }
 
     switch (parity) {
-        case SMP_SERIAL_FRAME_PARITY_EVEN:
+        case SMP_SERIAL_PARITY_EVEN:
             dcb.fParity = TRUE;
             dcb.Parity = EVENPARITY;
             break;
-        case SMP_SERIAL_FRAME_PARITY_ODD:
+        case SMP_SERIAL_PARITY_ODD:
             dcb.fParity = TRUE;
             dcb.Parity = ODDPARITY;
             break;
-        case SMP_SERIAL_FRAME_PARITY_NONE:
+        case SMP_SERIAL_PARITY_NONE:
         default:
             dcb.fParity = FALSE;
             dcb.Parity = NOPARITY;

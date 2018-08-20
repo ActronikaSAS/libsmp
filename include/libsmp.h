@@ -226,15 +226,15 @@ typedef enum
  */
 typedef enum
 {
-    SMP_SERIAL_FRAME_BAUDRATE_1200,      /**< 1200 bauds */
-    SMP_SERIAL_FRAME_BAUDRATE_2400,      /**< 2400 bauds */
-    SMP_SERIAL_FRAME_BAUDRATE_4800,      /**< 4800 bauds */
-    SMP_SERIAL_FRAME_BAUDRATE_9600,      /**< 9600 bauds */
-    SMP_SERIAL_FRAME_BAUDRATE_19200,     /**< 19200 bauds */
-    SMP_SERIAL_FRAME_BAUDRATE_38400,     /**< 38400 bauds */
-    SMP_SERIAL_FRAME_BAUDRATE_57600,     /**< 57600 bauds */
-    SMP_SERIAL_FRAME_BAUDRATE_115200,    /**< 115200 bauds */
-} SmpSerialFrameBaudrate;
+    SMP_SERIAL_BAUDRATE_1200,      /**< 1200 bauds */
+    SMP_SERIAL_BAUDRATE_2400,      /**< 2400 bauds */
+    SMP_SERIAL_BAUDRATE_4800,      /**< 4800 bauds */
+    SMP_SERIAL_BAUDRATE_9600,      /**< 9600 bauds */
+    SMP_SERIAL_BAUDRATE_19200,     /**< 19200 bauds */
+    SMP_SERIAL_BAUDRATE_38400,     /**< 38400 bauds */
+    SMP_SERIAL_BAUDRATE_57600,     /**< 57600 bauds */
+    SMP_SERIAL_BAUDRATE_115200,    /**< 115200 bauds */
+} SmpSerialBaudrate;
 
 /**
  * \ingroup serial_frame
@@ -242,10 +242,10 @@ typedef enum
  */
 typedef enum
 {
-    SMP_SERIAL_FRAME_PARITY_NONE,    /**< No parity */
-    SMP_SERIAL_FRAME_PARITY_ODD,     /**< Odd parity */
-    SMP_SERIAL_FRAME_PARITY_EVEN,    /**< Even parity */
-} SmpSerialFrameParity;
+    SMP_SERIAL_PARITY_NONE,    /**< No parity */
+    SMP_SERIAL_PARITY_ODD,     /**< Odd parity */
+    SMP_SERIAL_PARITY_EVEN,    /**< Even parity */
+} SmpSerialParity;
 
 /**
  * \ingroup serial_frame
@@ -273,6 +273,22 @@ typedef struct
 } SmpSerialDevice;
 #endif
 
+typedef SmpSerialBaudrate SmpSerialFrameBaudrate;
+typedef SmpSerialParity SmpSerialFrameParity;
+
+#define SMP_SERIAL_FRAME_BAUDRATE_1200 SMP_SERIAL_BAUDRATE_1200
+#define SMP_SERIAL_FRAME_BAUDRATE_2400 SMP_SERIAL_BAUDRATE_2400
+#define SMP_SERIAL_FRAME_BAUDRATE_4800 SMP_SERIAL_BAUDRATE_4800
+#define SMP_SERIAL_FRAME_BAUDRATE_9600 SMP_SERIAL_BAUDRATE_9600
+#define SMP_SERIAL_FRAME_BAUDRATE_19200 SMP_SERIAL_BAUDRATE_19200
+#define SMP_SERIAL_FRAME_BAUDRATE_38400 SMP_SERIAL_BAUDRATE_38400
+#define SMP_SERIAL_FRAME_BAUDRATE_57600 SMP_SERIAL_BAUDRATE_57600
+#define SMP_SERIAL_FRAME_BAUDRATE_115200 SMP_SERIAL_BAUDRATE_115200
+
+#define SMP_SERIAL_FRAME_PARITY_NONE SMP_SERIAL_PARITY_NONE
+#define SMP_SERIAL_FRAME_PARITY_ODD SMP_SERIAL_PARITY_ODD
+#define SMP_SERIAL_FRAME_PARITY_EVEN SMP_SERIAL_PARITY_EVEN
+
 typedef struct
 {
     SmpStaticSerialProtocolDecoder decoder;
@@ -289,7 +305,7 @@ SMP_API int smp_serial_frame_init(SmpSerialFrameContext *ctx,
 SMP_API void smp_serial_frame_deinit(SmpSerialFrameContext *ctx);
 
 SMP_API int smp_serial_frame_set_config(SmpSerialFrameContext *ctx,
-                SmpSerialFrameBaudrate baudrate, SmpSerialFrameParity parity,
+                SmpSerialBaudrate baudrate, SmpSerialParity parity,
                 int flow_control);
 
 SMP_API intptr_t smp_serial_frame_get_fd(SmpSerialFrameContext *ctx);

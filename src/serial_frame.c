@@ -99,8 +99,7 @@ void smp_serial_frame_deinit(SmpSerialFrameContext *ctx)
  * @return 0 on success, a SmpError otherwise.
  */
 int smp_serial_frame_set_config(SmpSerialFrameContext *ctx,
-        SmpSerialFrameBaudrate baudrate, SmpSerialFrameParity parity,
-        int flow_control)
+        SmpSerialBaudrate baudrate, SmpSerialParity parity, int flow_control)
 {
     return_val_if_fail(ctx != NULL, SMP_ERROR_INVALID_PARAM);
 

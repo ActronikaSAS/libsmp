@@ -274,28 +274,28 @@ static void set_baudrate_115200(UARTDevice *device)
 static void set_baudrate(UARTDevice *device, SmpSerialFrameBaudrate baudrate)
 {
     switch (baudrate) {
-        case SMP_SERIAL_FRAME_BAUDRATE_1200:
+        case SMP_SERIAL_BAUDRATE_1200:
             set_baudrate_1200(device);
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_2400:
+        case SMP_SERIAL_BAUDRATE_2400:
             set_baudrate_2400(device);
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_4800:
+        case SMP_SERIAL_BAUDRATE_4800:
             set_baudrate_4800(device);
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_9600:
+        case SMP_SERIAL_BAUDRATE_9600:
             set_baudrate_9600(device);
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_19200:
+        case SMP_SERIAL_BAUDRATE_19200:
             set_baudrate_19200(device);
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_38400:
+        case SMP_SERIAL_BAUDRATE_38400:
             set_baudrate_38400(device);
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_57600:
+        case SMP_SERIAL_BAUDRATE_57600:
             set_baudrate_57600(device);
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_115200:
+        case SMP_SERIAL_BAUDRATE_115200:
             set_baudrate_115200(device);
             break;
         default:
@@ -380,8 +380,7 @@ intptr_t smp_serial_device_get_fd(SmpSerialDevice *sdev)
 
 /* Note: AVR UART module has now built-in flow control */
 int smp_serial_device_set_config(SmpSerialDevice *sdev,
-        SmpSerialFrameBaudrate baudrate, SmpSerialFrameParity parity,
-        int flow_control)
+        SmpSerialBaudrate baudrate, SmpSerialParity parity, int flow_control)
 {
     UARTDevice *dev;
     UARTDeviceRegisters *regs;
@@ -399,14 +398,14 @@ int smp_serial_device_set_config(SmpSerialDevice *sdev,
     set_baudrate(dev, baudrate);
 
     switch (parity) {
-        case SMP_SERIAL_FRAME_PARITY_ODD:
+        case SMP_SERIAL_PARITY_ODD:
             *regs->csr_c |= (_BV(UPM00) | _BV(UPM01));
             break;
-        case SMP_SERIAL_FRAME_PARITY_EVEN:
+        case SMP_SERIAL_PARITY_EVEN:
             *regs->csr_c |= _BV(UPM01);
             *regs->csr_c &= ~(_BV(UPM00));
             break;
-        case SMP_SERIAL_FRAME_PARITY_NONE:
+        case SMP_SERIAL_PARITY_NONE:
         default:
             *regs->csr_c &= ~(_BV(UPM00) | _BV(UPM01));
             break;

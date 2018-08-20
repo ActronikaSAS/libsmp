@@ -112,7 +112,7 @@ intptr_t smp_serial_device_get_fd(SmpSerialDevice *device)
 }
 
 int smp_serial_device_set_config(SmpSerialDevice *device,
-        SmpSerialFrameBaudrate baudrate, SmpSerialFrameParity parity,
+        SmpSerialBaudrate baudrate, SmpSerialParity parity,
         int flow_control)
 {
     int ret = SMP_ERROR_NOT_SUPPORTED;
@@ -127,28 +127,28 @@ int smp_serial_device_set_config(SmpSerialDevice *device,
             return errno_to_smp_error(errno);
 
         switch (baudrate) {
-            case SMP_SERIAL_FRAME_BAUDRATE_1200:
+            case SMP_SERIAL_BAUDRATE_1200:
                 speed = B1200;
                 break;
-            case SMP_SERIAL_FRAME_BAUDRATE_2400:
+            case SMP_SERIAL_BAUDRATE_2400:
                 speed = B2400;
                 break;
-            case SMP_SERIAL_FRAME_BAUDRATE_4800:
+            case SMP_SERIAL_BAUDRATE_4800:
                 speed = B4800;
                 break;
-            case SMP_SERIAL_FRAME_BAUDRATE_9600:
+            case SMP_SERIAL_BAUDRATE_9600:
                 speed = B9600;
                 break;
-            case SMP_SERIAL_FRAME_BAUDRATE_19200:
+            case SMP_SERIAL_BAUDRATE_19200:
                 speed = B19200;
                 break;
-            case SMP_SERIAL_FRAME_BAUDRATE_38400:
+            case SMP_SERIAL_BAUDRATE_38400:
                 speed = B38400;
                 break;
-            case SMP_SERIAL_FRAME_BAUDRATE_57600:
+            case SMP_SERIAL_BAUDRATE_57600:
                 speed = B57600;
                 break;
-            case SMP_SERIAL_FRAME_BAUDRATE_115200:
+            case SMP_SERIAL_BAUDRATE_115200:
             default:
                 speed = B115200;
                 break;
@@ -157,15 +157,15 @@ int smp_serial_device_set_config(SmpSerialDevice *device,
         cfsetospeed(&term, speed);
 
         switch (parity) {
-            case SMP_SERIAL_FRAME_PARITY_ODD:
+            case SMP_SERIAL_PARITY_ODD:
                 term.c_cflag |= PARENB;
                 term.c_cflag |= PARODD;
                 break;
-            case SMP_SERIAL_FRAME_PARITY_EVEN:
+            case SMP_SERIAL_PARITY_EVEN:
                 term.c_cflag |= PARENB;
                 term.c_cflag &= ~PARODD;
                 break;
-            case SMP_SERIAL_FRAME_PARITY_NONE:
+            case SMP_SERIAL_PARITY_NONE:
             default:
                 term.c_cflag &= ~PARENB;
                 break;

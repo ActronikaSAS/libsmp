@@ -100,8 +100,7 @@ intptr_t smp_serial_device_get_fd(SmpSerialDevice *sdev)
 }
 
 int smp_serial_device_set_config(SmpSerialDevice *sdev,
-        SmpSerialFrameBaudrate baudrate, SmpSerialFrameParity parity,
-        int flow_control)
+        SmpSerialBaudrate baudrate, SmpSerialParity parity, int flow_control)
 {
     HardwareSerial *serial;
     long br;
@@ -117,28 +116,28 @@ int smp_serial_device_set_config(SmpSerialDevice *sdev,
     }
 
     switch (baudrate) {
-        case SMP_SERIAL_FRAME_BAUDRATE_1200:
+        case SMP_SERIAL_BAUDRATE_1200:
             br = 1200;
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_2400:
+        case SMP_SERIAL_BAUDRATE_2400:
             br = 2400;
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_4800:
+        case SMP_SERIAL_BAUDRATE_4800:
             br = 4800;
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_9600:
+        case SMP_SERIAL_BAUDRATE_9600:
             br = 9600;
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_19200:
+        case SMP_SERIAL_BAUDRATE_19200:
             br = 19200;
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_38400:
+        case SMP_SERIAL_BAUDRATE_38400:
             br = 38400;
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_57600:
+        case SMP_SERIAL_BAUDRATE_57600:
             br = 57600;
             break;
-        case SMP_SERIAL_FRAME_BAUDRATE_115200:
+        case SMP_SERIAL_BAUDRATE_115200:
             br = 115200;
             break;
         default:
@@ -146,13 +145,13 @@ int smp_serial_device_set_config(SmpSerialDevice *sdev,
     }
 
     switch (parity) {
-        case SMP_SERIAL_FRAME_PARITY_NONE:
+        case SMP_SERIAL_PARITY_NONE:
             mode = SERIAL_8N1;
             break;
-        case SMP_SERIAL_FRAME_PARITY_ODD:
+        case SMP_SERIAL_PARITY_ODD:
             mode = SERIAL_8O1;
             break;
-        case SMP_SERIAL_FRAME_PARITY_EVEN:
+        case SMP_SERIAL_PARITY_EVEN:
             mode = SERIAL_8E1;
             break;
         default:
