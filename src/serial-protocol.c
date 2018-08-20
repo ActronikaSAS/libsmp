@@ -245,6 +245,11 @@ int smp_serial_protocol_decoder_process_byte(SmpSerialProtocolDecoder *decoder,
             break;
     }
 
+    if (ret != 0 && byte != START_BYTE) {
+        /* reset state to WAIT_HEADER in error unless byte is a start one */
+        decoder->state = SMP_SERIAL_PROTOCOL_DECODER_STATE_WAIT_HEADER;
+    }
+
     return ret;
 }
 
