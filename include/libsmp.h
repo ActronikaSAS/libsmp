@@ -325,21 +325,30 @@ typedef struct
     void *userdata;
 } SmpSerialFrameContext;
 
+SMP_DEPRECATED_FOR(smp_context_new)
 SMP_API int smp_serial_frame_init(SmpSerialFrameContext *ctx,
                 const char *device, const SmpSerialFrameDecoderCallbacks *cbs,
                 void *userdata);
+
+SMP_DEPRECATED_FOR(smp_context_free)
 SMP_API void smp_serial_frame_deinit(SmpSerialFrameContext *ctx);
 
+SMP_DEPRECATED_FOR(smp_context_set_config)
 SMP_API int smp_serial_frame_set_config(SmpSerialFrameContext *ctx,
                 SmpSerialBaudrate baudrate, SmpSerialParity parity,
                 int flow_control);
 
+SMP_DEPRECATED_FOR(smp_context_get_fd)
 SMP_API intptr_t smp_serial_frame_get_fd(SmpSerialFrameContext *ctx);
 
+SMP_DEPRECATED_FOR(smp_context_send_message)
 SMP_API int smp_serial_frame_send(SmpSerialFrameContext *ctx,
                 const uint8_t *buf, size_t size);
+
+SMP_DEPRECATED_FOR(smp_context_process_fd)
 SMP_API int smp_serial_frame_process_recv_fd(SmpSerialFrameContext *ctx);
 
+SMP_DEPRECATED_FOR(smp_context_wait_and_process)
 SMP_API int smp_serial_frame_wait_and_process(SmpSerialFrameContext *ctx,
                 int timeout_ms);
 

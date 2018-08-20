@@ -171,7 +171,8 @@ add_project_arguments(c_compiler.get_supported_arguments(c_warning_flags),
 add_project_arguments(cpp_compiler.get_supported_arguments(cpp_warning_flags),
     language: 'cpp')
 
-libsmp_flags = ['-DSMP_ENABLE_STATIC_API']
+libsmp_flags = ['-DSMP_ENABLE_STATIC_API',
+    '-DSMP_DISABLE_DEPRECATED']
 if get_option('default_library') == 'shared'
   libsmp_flags += '-DSMP_EXPORT_API'
 endif
