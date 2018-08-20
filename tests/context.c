@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#define SMP_ENABLE_STATIC_API
 #include <libsmp.h>
 
 #include "tests.h"
@@ -143,6 +144,8 @@ static void test_smp_context_send_message(void)
 typedef enum {
     VALID_PAYLOAD,
     CORRUPTED_PAYLOAD,
+    STATIC_API_OK,
+    STATIC_API_TOO_BIG,
 } TestContextReceiveMessageCase;
 
 static TestContextReceiveMessageCase test_smp_context_receive_message_case;
@@ -180,6 +183,9 @@ static void on_error(SmpContext *ctx, SmpError error, void *userdata)
     switch (test_smp_context_receive_message_case) {
         case CORRUPTED_PAYLOAD:
             CU_ASSERT_EQUAL(error, SMP_ERROR_BAD_MESSAGE);
+            break;
+        case STATIC_API_TOO_BIG:
+            CU_ASSERT_EQUAL(error, SMP_ERROR_TOO_BIG);
             break;
         default:
             break;
@@ -252,6 +258,127 @@ static void test_smp_context_receive_corrupted_message(void)
     test_teardown(&tctx);
 }
 
+static void test_smp_context_static_api(void)
+{
+    TestCtx tctx;
+    SmpContext *ctx;
+    SmpSerialProtocolDecoder *decoder;
+    SmpBuffer *serial_tx;
+    SmpBuffer *msg_tx;
+    SmpStaticContext sctx;
+    SmpStaticSerialProtocolDecoder sdecoder;
+    SmpStaticBuffer sserial_tx;
+    SmpStaticBuffer smsg_tx;
+    uint8_t tx_serial_buffer[32];
+    uint8_t rx_serial_buffer[32];
+    uint8_t msg_buffer[16];
+    SmpMessage msg;
+
+    test_setup(&tctx);
+
+    serial_tx = smp_buffer_new_from_static(&sserial_tx, sizeof(sserial_tx),
+            tx_serial_buffer, sizeof(tx_serial_buffer), NULL);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(serial_tx);
+
+    msg_tx = smp_buffer_new_from_static(&smsg_tx, sizeof(smsg_tx), msg_buffer,
+            sizeof(msg_buffer), NULL);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg_tx);
+
+    decoder = smp_serial_protocol_decoder_new_from_static(&sdecoder,
+            sizeof(sdecoder), rx_serial_buffer, sizeof(rx_serial_buffer));
+    CU_ASSERT_PTR_NOT_NULL_FATAL(decoder);
+
+    /* testing with invalid args should fail */
+    ctx = smp_context_new_from_static(NULL, 0, NULL, NULL, NULL, NULL, NULL);
+    CU_ASSERT_PTR_NULL(ctx);
+
+    ctx = smp_context_new_from_static(NULL, sizeof(sctx), &simple_cbs, NULL,
+            decoder, serial_tx, msg_tx);
+    CU_ASSERT_PTR_NULL(ctx);
+
+    ctx = smp_context_new_from_static(&sctx, sizeof(sctx) - 1, &simple_cbs, NULL,
+            decoder, serial_tx, msg_tx);
+    CU_ASSERT_PTR_NULL(ctx);
+
+    ctx = smp_context_new_from_static(&sctx, sizeof(sctx), NULL, NULL,
+            decoder, serial_tx, msg_tx);
+    CU_ASSERT_PTR_NULL(ctx);
+
+    ctx = smp_context_new_from_static(&sctx, sizeof(sctx), &simple_cbs, NULL,
+            NULL, serial_tx, msg_tx);
+    CU_ASSERT_PTR_NULL(ctx);
+
+    ctx = smp_context_new_from_static(&sctx, sizeof(sctx), &simple_cbs, NULL,
+            decoder, NULL, msg_tx);
+    CU_ASSERT_PTR_NULL(ctx);
+
+    ctx = smp_context_new_from_static(&sctx, sizeof(sctx), &simple_cbs, NULL,
+            decoder, serial_tx, NULL);
+    CU_ASSERT_PTR_NULL(ctx);
+
+    /* should work */
+    ctx = smp_context_new_from_static(&sctx, sizeof(sctx), &test_cbs,
+            &test_smp_context_receive_message_case, decoder, serial_tx, msg_tx);
+    CU_ASSERT_PTR_NOT_NULL(ctx);
+
+    ctx = smp_context_new_from_static(&sctx, sizeof(sctx) + 1, &test_cbs,
+            &test_smp_context_receive_message_case, decoder, serial_tx, msg_tx);
+    CU_ASSERT_PTR_NOT_NULL(ctx);
+
+    /* sending a basic message should work */
+    CU_ASSERT_EQUAL_FATAL(smp_context_open(ctx, FIFO_PATH), 0);
+
+    smp_message_init(&msg, 1);
+    CU_ASSERT_EQUAL(smp_context_send_message(ctx, &msg), 0);
+
+    test_smp_context_receive_message_case = STATIC_API_OK;
+    test_smp_context_on_message_called = false;
+    test_smp_context_on_error_called = false;
+    CU_ASSERT_EQUAL(smp_context_process_fd(ctx), 0);
+    CU_ASSERT_TRUE(test_smp_context_on_message_called);
+    CU_ASSERT_FALSE(test_smp_context_on_error_called);
+
+    /* reset msg_tx buffer to have a size lesser than the message header size */
+    msg_tx = smp_buffer_new_from_static(&smsg_tx, sizeof(smsg_tx), msg_buffer,
+            4, NULL);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg_tx);
+
+    /* sending a message which exceed the message buffer should fail */
+    CU_ASSERT_EQUAL(smp_context_send_message(ctx, &msg), SMP_ERROR_OVERFLOW);
+
+    /* reset msg_tx to a normal size and reduce serial_tx to cause an error */
+    msg_tx = smp_buffer_new_from_static(&smsg_tx, sizeof(smsg_tx), msg_buffer,
+            sizeof(msg_buffer), NULL);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg_tx);
+
+    serial_tx = smp_buffer_new_from_static(&sserial_tx, sizeof(sserial_tx),
+            tx_serial_buffer, 8, NULL);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(serial_tx);
+
+    CU_ASSERT_EQUAL(smp_context_send_message(ctx, &msg), SMP_ERROR_OVERFLOW);
+
+    /* reset serial_tx buffer and reduce serial_rx to cause a too big error */
+    serial_tx = smp_buffer_new_from_static(&sserial_tx, sizeof(sserial_tx),
+            tx_serial_buffer, sizeof(tx_serial_buffer), NULL);
+
+    decoder = smp_serial_protocol_decoder_new_from_static(&sdecoder,
+            sizeof(sdecoder), rx_serial_buffer, 8);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(decoder);
+
+    CU_ASSERT_EQUAL(smp_context_send_message(ctx, &msg), 0);
+
+    test_smp_context_receive_message_case = STATIC_API_TOO_BIG;
+    test_smp_context_on_message_called = false;
+    test_smp_context_on_error_called = false;
+    CU_ASSERT_EQUAL(smp_context_process_fd(ctx), 0);
+    CU_ASSERT_FALSE(test_smp_context_on_message_called);
+    CU_ASSERT_TRUE(test_smp_context_on_error_called);
+
+    smp_context_close(ctx);
+
+    test_teardown(&tctx);
+}
+
 typedef struct
 {
     const char *name;
@@ -264,6 +391,7 @@ static Test tests[] = {
     DEFINE_TEST(test_smp_context_send_message),
     DEFINE_TEST(test_smp_context_receive_valid_message),
     DEFINE_TEST(test_smp_context_receive_corrupted_message),
+    DEFINE_TEST(test_smp_context_static_api),
     { NULL, NULL }
 };
 
