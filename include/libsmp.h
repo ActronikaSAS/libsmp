@@ -29,7 +29,6 @@
 #endif
 
 #include <libsmp-config.h>
-#include <libsmp-static.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -224,21 +223,7 @@ SMP_API int smp_message_set_cstring(SmpMessage *msg, int index, const char *valu
 SMP_API int smp_message_set_craw(SmpMessage *msg, int index, const uint8_t *raw,
                 size_t size);
 
-/* Serial frame API */
-
-/**
- * \ingroup serial_frame
- * Error thrown during decoding
- */
-typedef enum
-{
-    /** No error */
-    SMP_SERIAL_FRAME_ERROR_NONE = 0,
-    /** Payload is corrupted (bad crc, missing end byte...) */
-    SMP_SERIAL_FRAME_ERROR_CORRUPTED = -1,
-    /** Payload too big to fit in buffer */
-    SMP_SERIAL_FRAME_ERROR_PAYLOAD_TOO_BIG = -2,
-} SmpSerialFrameError;
+/* Serial API */
 
 /**
  * \ingroup serial_frame
@@ -267,19 +252,6 @@ typedef enum
     SMP_SERIAL_PARITY_EVEN,    /**< Even parity */
 } SmpSerialParity;
 
-/**
- * \ingroup serial_frame
- * Callback structure passed to decoder
- */
-typedef struct
-{
-    /** called when a new valid frame is available */
-    void (*new_frame)(uint8_t *frame, size_t size, void *userdata);
-
-    /** called when an error occurs while decoding incoming data */
-    void (*error)(SmpSerialFrameError error, void *userdata);
-} SmpSerialFrameDecoderCallbacks;
-
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 typedef struct
@@ -292,6 +264,37 @@ typedef struct
     int fd;
 } SmpSerialDevice;
 #endif
+
+/* define hack to disable legacy API when generating libsmp-static.h */
+#ifndef SMP_DISABLE_LEGACY_API
+#include <libsmp-static.h>
+
+/**
+ * \ingroup serial_frame
+ * Error thrown during decoding
+ */
+typedef enum
+{
+    /** No error */
+    SMP_SERIAL_FRAME_ERROR_NONE = 0,
+    /** Payload is corrupted (bad crc, missing end byte...) */
+    SMP_SERIAL_FRAME_ERROR_CORRUPTED = -1,
+    /** Payload too big to fit in buffer */
+    SMP_SERIAL_FRAME_ERROR_PAYLOAD_TOO_BIG = -2,
+} SmpSerialFrameError;
+
+/**
+ * \ingroup serial_frame
+ * Callback structure passed to decoder
+ */
+typedef struct
+{
+    /** called when a new valid frame is available */
+    void (*new_frame)(uint8_t *frame, size_t size, void *userdata);
+
+    /** called when an error occurs while decoding incoming data */
+    void (*error)(SmpSerialFrameError error, void *userdata);
+} SmpSerialFrameDecoderCallbacks;
 
 SMP_DEPRECATED_FOR(SmpSerialBaudrate)
 typedef SmpSerialBaudrate SmpSerialFrameBaudrate;
@@ -339,6 +342,8 @@ SMP_API int smp_serial_frame_process_recv_fd(SmpSerialFrameContext *ctx);
 
 SMP_API int smp_serial_frame_wait_and_process(SmpSerialFrameContext *ctx,
                 int timeout_ms);
+
+#endif /* SMP_DISABLE_LEGACY_API */
 
 /* Context API */
 typedef struct SmpContext SmpContext;
