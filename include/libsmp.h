@@ -293,7 +293,10 @@ typedef struct
 } SmpSerialDevice;
 #endif
 
+SMP_DEPRECATED_FOR(SmpSerialBaudrate)
 typedef SmpSerialBaudrate SmpSerialFrameBaudrate;
+
+SMP_DEPRECATED_FOR(SmpSerialParity)
 typedef SmpSerialParity SmpSerialFrameParity;
 
 #define SMP_SERIAL_FRAME_BAUDRATE_1200 SMP_SERIAL_BAUDRATE_1200
