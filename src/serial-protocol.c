@@ -62,6 +62,17 @@ static uint8_t compute_checksum(const uint8_t *buf, size_t size)
     return checksum;
 }
 
+static int
+smp_serial_protocol_decoder_put_byte(SmpSerialProtocolDecoder *decoder,
+        uint8_t byte)
+{
+    if (decoder->offset >= decoder->bufsize)
+        return SMP_ERROR_TOO_BIG;
+
+    decoder->buf[decoder->offset++] = byte;
+    return 0;
+}
+
 /* dest should be able to contain at least 2 bytes. returns the number of
  * bytes written */
 static int smp_serial_protocol_write_byte(uint8_t *dest, uint8_t byte)
@@ -120,13 +131,7 @@ smp_serial_protocol_decoder_process_byte_inframe(
            break;
         }
         default:
-            if (decoder->offset >= decoder->bufsize) {
-                ret = SMP_ERROR_TOO_BIG;
-                break;
-            }
-
-            decoder->buf[decoder->offset++] = byte;
-            ret = 0;
+            ret = smp_serial_protocol_decoder_put_byte(decoder, byte);
             break;
     }
 
@@ -230,14 +235,11 @@ int smp_serial_protocol_decoder_process_byte(SmpSerialProtocolDecoder *decoder,
             break;
 
         case SMP_SERIAL_PROTOCOL_DECODER_STATE_IN_FRAME_ESC:
-            if (decoder->offset >= decoder->bufsize) {
-                ret = SMP_ERROR_TOO_BIG;
+            ret = smp_serial_protocol_decoder_put_byte(decoder, byte);
+            if (ret < 0)
                 break;
-            }
 
-            decoder->buf[decoder->offset++] = byte;
             decoder->state = SMP_SERIAL_PROTOCOL_DECODER_STATE_IN_FRAME;
-            ret = 0;
             break;
 
         default:
