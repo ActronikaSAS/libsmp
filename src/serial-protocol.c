@@ -18,6 +18,7 @@
 #include "serial-protocol.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "libsmp.h"
 #include "libsmp-private.h"
@@ -27,6 +28,7 @@
 #define ESC_BYTE 0x1B
 
 #define DEFAULT_BUFFER_SIZE 1024
+#define DEFAULT_MAXIMUM_DECODER_BUFFER_SIZE (1 * 1024 * 1024) /* 1 MB */
 
 static inline int is_magic_byte(uint8_t byte)
 {
@@ -63,11 +65,45 @@ static uint8_t compute_checksum(const uint8_t *buf, size_t size)
 }
 
 static int
+smp_serial_protocol_decoder_set_capacity(SmpSerialProtocolDecoder *decoder,
+        size_t capacity)
+{
+    uint8_t *new_ptr;
+
+    if (decoder->statically_allocated)
+        return SMP_ERROR_TOO_BIG;
+
+    if (capacity > DEFAULT_MAXIMUM_DECODER_BUFFER_SIZE)
+        return SMP_ERROR_TOO_BIG;
+
+    new_ptr = realloc(decoder->buf, capacity);
+    if (new_ptr == NULL)
+        return SMP_ERROR_NO_MEM;
+
+    if (capacity > decoder->bufsize)
+        memset(new_ptr + decoder->bufsize, 0, capacity - decoder->bufsize);
+
+    decoder->buf = new_ptr;
+    decoder->bufsize = capacity;
+    return 0;
+}
+
+static int
 smp_serial_protocol_decoder_put_byte(SmpSerialProtocolDecoder *decoder,
         uint8_t byte)
 {
-    if (decoder->offset >= decoder->bufsize)
-        return SMP_ERROR_TOO_BIG;
+    if (decoder->offset >= decoder->bufsize) {
+        size_t new_size;
+        int ret;
+
+        new_size = decoder->bufsize + DEFAULT_BUFFER_SIZE;
+        if (new_size < decoder->bufsize)
+            return SMP_ERROR_OVERFLOW;
+
+        ret = smp_serial_protocol_decoder_set_capacity(decoder, new_size);
+        if (ret < 0)
+            return ret;
+    }
 
     decoder->buf[decoder->offset++] = byte;
     return 0;
@@ -141,17 +177,19 @@ smp_serial_protocol_decoder_process_byte_inframe(
 static int smp_serial_protocol_decoder_init(SmpSerialProtocolDecoder *decoder,
         uint8_t *buf, size_t bufsize, bool statically_allocated)
 {
-    if (buf == NULL) {
-        buf = calloc(bufsize, sizeof(uint8_t));
-        if (buf == NULL)
-            return SMP_ERROR_NO_MEM;
-    }
+    int ret = 0;
 
     decoder->state = SMP_SERIAL_PROTOCOL_DECODER_STATE_WAIT_HEADER;
-    decoder->buf = buf;
-    decoder->bufsize = bufsize;
     decoder->statically_allocated = statically_allocated;
-    return 0;
+
+    if (buf == NULL) {
+        ret = smp_serial_protocol_decoder_set_capacity(decoder, bufsize);
+    } else {
+        decoder->buf = buf;
+        decoder->bufsize = bufsize;
+    }
+
+    return ret;
 }
 
 /* API */

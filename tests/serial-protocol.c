@@ -385,6 +385,9 @@ static void test_smp_serial_protocol_decoder_too_big(void)
 
     ctx = test_decoder_new_full(4, payload, sizeof(payload), false);
 
+    /* switch to statically_allocated to check the path */
+    ctx->decoder->statically_allocated = true;
+
     ret = test_decoder_process_payload(ctx);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_TOO_BIG);
     CU_ASSERT_PTR_NULL(ctx->frame);
@@ -399,6 +402,9 @@ static void test_smp_serial_protocol_decoder_too_big_esc(void)
     int ret;
 
     ctx = test_decoder_new_full(4, payload, sizeof(payload), false);
+
+    /* switch to statically_allocated to check the path */
+    ctx->decoder->statically_allocated = true;
 
     ret = test_decoder_process_payload(ctx);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_TOO_BIG);
@@ -490,6 +496,22 @@ static void test_smp_serial_protocol_decoder_start_end(void)
     test_decoder_free(ctx);
 }
 
+static void test_smp_serial_protocol_decoder_resize_decoder(void)
+{
+    TestDecoderCtx *ctx;
+    uint8_t payload[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
+    int ret;
+
+    ctx = test_decoder_new_full(8, payload, sizeof(payload), true);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(ctx->decoder);
+
+    ret = test_decoder_process_payload(ctx);
+    CU_ASSERT_EQUAL(ret, 0);
+    test_decoder_check_frame(ctx, payload, sizeof(payload));
+
+    test_decoder_free(ctx);
+}
+
 typedef struct
 {
     const char *name;
@@ -510,6 +532,7 @@ static Test tests[] = {
     DEFINE_TEST(test_smp_serial_protocol_decoder_crc_escaped),
     DEFINE_TEST(test_smp_serial_protocol_decoder_frames_and_garbage),
     DEFINE_TEST(test_smp_serial_protocol_decoder_start_end),
+    DEFINE_TEST(test_smp_serial_protocol_decoder_resize_decoder),
     { NULL, NULL }
 };
 
