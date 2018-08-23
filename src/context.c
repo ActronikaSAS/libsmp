@@ -28,6 +28,8 @@
 #include "buffer.h"
 #include "serial-device.h"
 
+SMP_STATIC_ASSERT(sizeof(SmpContext) == sizeof(SmpStaticContext));
+
 static void smp_context_init(SmpContext *ctx, SmpSerialProtocolDecoder *decoder,
         const SmpEventCallbacks *cbs, void *userdata, bool statically_allocated)
 {

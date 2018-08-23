@@ -31,6 +31,8 @@
 
 #define MSG_HEADER_SIZE 8
 
+SMP_STATIC_ASSERT(sizeof(SmpMessage) == sizeof(SmpStaticMessage));
+
 #define DEFINE_READ_FUNC(type) \
 static inline type##_t smp_read_##type(const uint8_t *data) \
 { \

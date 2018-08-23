@@ -48,4 +48,9 @@ typedef signed __int64 ssize_t;
 
 #define smp_new(Type) calloc(1, sizeof(Type))
 
+#define SMP_DO_CONCAT(a, b) a ## b
+#define SMP_CONCAT(a, b) SMP_DO_CONCAT(a,b)
+#define SMP_STATIC_ASSERT(cond) \
+    typedef char SMP_CONCAT(static_assertion, __LINE__)[cond ? 1 : -1];
+
 #endif

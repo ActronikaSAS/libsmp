@@ -24,6 +24,8 @@
 
 #include <stdlib.h>
 
+SMP_STATIC_ASSERT(sizeof(SmpBuffer) == sizeof(SmpStaticBuffer));
+
 static void smp_buffer_init(SmpBuffer *buffer, uint8_t *data, size_t maxsize,
         SmpBufferFreeFunc free_func, bool statically_allocated)
 {

@@ -30,6 +30,9 @@
 #define DEFAULT_BUFFER_SIZE 1024
 #define DEFAULT_MAXIMUM_DECODER_BUFFER_SIZE (1 * 1024 * 1024) /* 1 MB */
 
+SMP_STATIC_ASSERT(sizeof(SmpSerialProtocolDecoder)
+        == sizeof(SmpStaticSerialProtocolDecoder));
+
 static inline int is_magic_byte(uint8_t byte)
 {
     return (byte == START_BYTE || byte == END_BYTE || byte == ESC_BYTE);
