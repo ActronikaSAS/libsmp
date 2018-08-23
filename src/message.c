@@ -338,11 +338,11 @@ static ssize_t smp_message_encode_value(const SmpValue *value, uint8_t *buffer)
 static size_t smp_message_compute_max_encoded_size(SmpMessage *msg)
 {
     size_t ret = 0;
-    int i;
+    size_t i;
 
-    for (i = 0; i < SMP_MESSAGE_MAX_VALUES; i++) {
-        if (msg->values[i].type != SMP_TYPE_NONE)
-            ret += (1 + smp_value_compute_size(&msg->values[i]));
+    for (i = 0; i < msg->capacity; i++) {
+        if (msg->pvalues[i].type != SMP_TYPE_NONE)
+            ret += (1 + smp_value_compute_size(&msg->pvalues[i]));
     }
 
     return ret;
@@ -384,12 +384,14 @@ SmpMessage *smp_message_new_with_id(uint32_t id)
 
 /**
  * \ingroup message
- * Create a new SmpMessage from a static memory space
+ * Create a new SmpMessage from a static memory space.
+ * @warning: for now DON'T use smp_message_init() or
+ * smp_message_init_from_buffer() on a buffer created using this func.
  *
  * @param[in] smsg a SmpStaticMessage
  * @param[in] struct_size the size of smsg
- * @param[in] values pointer to an array of values to use (not used for now)
- * @param[in] capacity capacity of the provided values array (not used for now)
+ * @param[in] values pointer to an array of values to use
+ * @param[in] capacity capacity of the provided values array
  *
  * @return a new SmpMessage or NULL on error.
  */
@@ -403,11 +405,13 @@ SmpMessage *smp_message_new_from_static(SmpStaticMessage *smsg,
 /**
  * \ingroup message
  * Create a new SmpMessage from a static memory space
+ * @warning: for now DON'T use smp_message_init() or
+ * smp_message_init_from_buffer() on a buffer created using this func.
  *
  * @param[in] smsg a SmpStaticMessage
  * @param[in] struct_size the size of smsg
- * @param[in] values pointer to an array of values to use (not used for now)
- * @param[in] capacity capacity of the provided values array (not used for now)
+ * @param[in] values pointer to an array of values to use
+ * @param[in] capacity capacity of the provided values array
  * @param[in] id the ID of the message
  *
  * @return a new SmpMessage or NULL on error.
@@ -419,8 +423,14 @@ SmpMessage *smp_message_new_from_static_with_id(SmpStaticMessage *smsg,
 
     return_val_if_fail(smsg != NULL, NULL);
     return_val_if_fail(struct_size >= sizeof(SmpMessage), NULL);
+    return_val_if_fail(values != NULL, NULL);
+    return_val_if_fail(capacity > 0, NULL);
 
     smp_message_init(msg, id);
+    msg->pvalues = values;
+    msg->capacity = capacity;
+
+    memset(msg->pvalues, 0, capacity * sizeof(SmpValue));
 
     return msg;
 }
@@ -434,6 +444,9 @@ SmpMessage *smp_message_new_from_static_with_id(SmpStaticMessage *smsg,
 void smp_message_free(SmpMessage *msg)
 {
     return_if_fail(msg != NULL);
+
+    if (msg->statically_allocated)
+        return;
 
     free(msg);
 }
@@ -452,6 +465,8 @@ void smp_message_init(SmpMessage *msg, uint32_t msgid)
     memset(msg, 0, sizeof(*msg));
 
     msg->msgid = msgid;
+    msg->pvalues = msg->values;
+    msg->capacity = SMP_MESSAGE_MAX_VALUES;
 }
 
 /**
@@ -473,7 +488,7 @@ int smp_message_init_from_buffer(SmpMessage *msg, const uint8_t *buffer,
 {
     size_t argsize;
     size_t offset;
-    int i;
+    size_t i;
 
     return_val_if_fail(msg != NULL, SMP_ERROR_INVALID_PARAM);
     return_val_if_fail(buffer != NULL, SMP_ERROR_INVALID_PARAM);
@@ -489,10 +504,10 @@ int smp_message_init_from_buffer(SmpMessage *msg, const uint8_t *buffer,
         return SMP_ERROR_BAD_MESSAGE;
 
     offset = MSG_HEADER_SIZE;
-    for (i = 0; size - offset > 0 && i < SMP_MESSAGE_MAX_VALUES; i++) {
+    for (i = 0; size - offset > 0 && i < msg->capacity; i++) {
         int ret;
 
-        ret = smp_message_decode_value(&msg->values[i], buffer + offset,
+        ret = smp_message_decode_value(&msg->pvalues[i], buffer + offset,
                 size - offset);
         if (ret < 0)
             return ret;
@@ -532,7 +547,7 @@ void smp_message_clear(SmpMessage *msg)
 ssize_t smp_message_encode(SmpMessage *msg, uint8_t *buffer, size_t size)
 {
     size_t offset = 0;
-    int i;
+    size_t i;
 
     return_val_if_fail(msg != NULL, SMP_ERROR_INVALID_PARAM);
     return_val_if_fail(buffer != NULL, SMP_ERROR_INVALID_PARAM);
@@ -544,8 +559,8 @@ ssize_t smp_message_encode(SmpMessage *msg, uint8_t *buffer, size_t size)
     smp_write_uint32(buffer, msg->msgid);
     offset += MSG_HEADER_SIZE;
 
-    for (i = 0; i < SMP_MESSAGE_MAX_VALUES; i++) {
-        const SmpValue *val = &msg->values[i];
+    for (i = 0; i < msg->capacity; i++) {
+        const SmpValue *val = &msg->pvalues[i];
 
         if (val->type == SMP_TYPE_NONE)
             continue;
@@ -589,12 +604,12 @@ uint32_t smp_message_get_msgid(SmpMessage *msg)
  */
 int smp_message_n_args(SmpMessage *msg)
 {
-    int i;
+    size_t i;
 
     return_val_if_fail(msg != NULL, -1);
 
-    for (i = 0; i < SMP_MESSAGE_MAX_VALUES; i++) {
-        if (msg->values[i].type == SMP_TYPE_NONE)
+    for (i = 0; i < msg->capacity; i++) {
+        if (msg->pvalues[i].type == SMP_TYPE_NONE)
             break;
     }
 
@@ -625,14 +640,14 @@ int smp_message_get(SmpMessage *msg, int index, ...)
 
     do {
         SmpType type;
+        SmpValue val;
 
-        if (index >= SMP_MESSAGE_MAX_VALUES) {
-            ret = SMP_ERROR_NOT_FOUND;
+        ret = smp_message_get_value(msg, index, &val);
+        if (ret < 0)
             goto done;
-        }
 
         type = va_arg(ap, int);
-        if (type != msg->values[index].type) {
+        if (type != val.type) {
             ret = SMP_ERROR_BAD_TYPE;
             goto done;
         }
@@ -641,59 +656,59 @@ int smp_message_get(SmpMessage *msg, int index, ...)
             case SMP_TYPE_UINT8: {
                 uint8_t *ptr = va_arg(ap, uint8_t *);
 
-                *ptr = msg->values[index].value.u8;
+                *ptr = val.value.u8;
                 break;
             }
             case SMP_TYPE_INT8: {
                 int8_t *ptr = va_arg(ap, int8_t *);
 
-                *ptr = msg->values[index].value.i8;
+                *ptr = val.value.i8;
                 break;
             }
             case SMP_TYPE_UINT16: {
                 uint16_t *ptr = va_arg(ap, uint16_t *);
 
-                *ptr = msg->values[index].value.u16;
+                *ptr = val.value.u16;
                 break;
             }
 
             case SMP_TYPE_INT16: {
                 int16_t *ptr = va_arg(ap, int16_t *);
 
-                *ptr = msg->values[index].value.i16;
+                *ptr = val.value.i16;
                 break;
             }
             case SMP_TYPE_UINT32: {
                 uint32_t *ptr = va_arg(ap, uint32_t *);
 
-                *ptr = msg->values[index].value.u32;
+                *ptr = val.value.u32;
                 break;
             }
 
             case SMP_TYPE_INT32: {
                 int32_t *ptr = va_arg(ap, int32_t *);
 
-                *ptr = msg->values[index].value.i32;
+                *ptr = val.value.i32;
                 break;
             }
             case SMP_TYPE_UINT64: {
                 uint64_t *ptr = va_arg(ap, uint64_t *);
 
-                *ptr = msg->values[index].value.u64;
+                *ptr = val.value.u64;
                 break;
             }
 
             case SMP_TYPE_INT64: {
                 int64_t *ptr = va_arg(ap, int64_t *);
 
-                *ptr = msg->values[index].value.i64;
+                *ptr = val.value.i64;
                 break;
             }
 
             case SMP_TYPE_STRING: {
                 const char **ptr = va_arg(ap, const char **);
 
-                *ptr = msg->values[index].value.cstring;
+                *ptr = val.value.cstring;
                 break;
             }
 
@@ -701,22 +716,22 @@ int smp_message_get(SmpMessage *msg, int index, ...)
                 const uint8_t **ptr = va_arg(ap, const uint8_t **);
                 size_t *psize = va_arg(ap, size_t *);
 
-                *ptr = msg->values[index].value.craw;
-                *psize = msg->values[index].value.craw_size;
+                *ptr = val.value.craw;
+                *psize = val.value.craw_size;
                 break;
             }
 
             case SMP_TYPE_F32: {
                 float *ptr = va_arg(ap, float *);
 
-                *ptr = msg->values[index].value.f32;
+                *ptr = val.value.f32;
                 break;
             }
 
             case SMP_TYPE_F64: {
                 double *ptr = va_arg(ap, double *);
 
-                *ptr = msg->values[index].value.f64;
+                *ptr = val.value.f64;
                 break;
             }
 
@@ -751,13 +766,13 @@ int smp_message_get_value(SmpMessage *msg, int index, SmpValue *value)
     return_val_if_fail(index >= 0, SMP_ERROR_INVALID_PARAM);
     return_val_if_fail(value != NULL, SMP_ERROR_INVALID_PARAM);
 
-    if (index >= SMP_MESSAGE_MAX_VALUES)
+    if ((size_t) index >= msg->capacity)
         return SMP_ERROR_NOT_FOUND;
 
-    if (msg->values[index].type == SMP_TYPE_NONE)
+    if (msg->pvalues[index].type == SMP_TYPE_NONE)
         return SMP_ERROR_NOT_FOUND;
 
-    *value = msg->values[index];
+    *value = msg->pvalues[index];
     return 0;
 }
 
@@ -1068,10 +1083,10 @@ int smp_message_set_value(SmpMessage *msg, int index, const SmpValue *value)
     return_val_if_fail(index >= 0, SMP_ERROR_INVALID_PARAM);
     return_val_if_fail(value != NULL, SMP_ERROR_INVALID_PARAM);
 
-    if (index >= SMP_MESSAGE_MAX_VALUES)
+    if ((size_t) index >= msg->capacity)
         return SMP_ERROR_NOT_FOUND;
 
-    msg->values[index] = *value;
+    msg->pvalues[index] = *value;
     return 0;
 }
 

@@ -23,6 +23,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifndef __AVR
 #include <sys/types.h>
@@ -181,6 +182,10 @@ typedef struct
     uint32_t msgid;
 
     SmpValue values[SMP_MESSAGE_MAX_VALUES];
+    SmpValue *pvalues;
+    size_t capacity;
+
+    bool statically_allocated;
 } SmpMessage;
 
 SMP_API SmpMessage *smp_message_new(void);

@@ -41,6 +41,7 @@ static void test_smp_message_new_from_static(void)
 {
     SmpMessage *msg;
     SmpStaticMessage smsg;
+    SmpValue storage[16];
 
     msg = smp_message_new_from_static(NULL, 0, NULL, 0);
     CU_ASSERT_PTR_NULL(msg);
@@ -51,10 +52,19 @@ static void test_smp_message_new_from_static(void)
     msg = smp_message_new_from_static(&smsg, sizeof(smsg) - 1, NULL, 0);
     CU_ASSERT_PTR_NULL(msg);
 
-    msg = smp_message_new_from_static(&smsg, sizeof(smsg), NULL, 0);
+    msg = smp_message_new_from_static(&smsg, sizeof(smsg), NULL,
+            SMP_N_ELEMENTS(storage));
+    CU_ASSERT_PTR_NULL(msg);
+
+    msg = smp_message_new_from_static(&smsg, sizeof(smsg), storage, 0);
+    CU_ASSERT_PTR_NULL(msg);
+
+    msg = smp_message_new_from_static(&smsg, sizeof(smsg), storage,
+            SMP_N_ELEMENTS(storage));
     CU_ASSERT_PTR_NOT_NULL(msg);
 
-    msg = smp_message_new_from_static(&smsg, sizeof(smsg) + 10, NULL, 0);
+    msg = smp_message_new_from_static(&smsg, sizeof(smsg) + 10, storage,
+            SMP_N_ELEMENTS(storage));
     CU_ASSERT_PTR_NOT_NULL(msg);
 }
 
@@ -62,6 +72,7 @@ static void test_smp_message_new_from_static_with_id(void)
 {
     SmpMessage *msg;
     SmpStaticMessage smsg;
+    SmpValue storage[16];
 
     msg = smp_message_new_from_static_with_id(NULL, 0, NULL, 0, 42);
     CU_ASSERT_PTR_NULL(msg);
@@ -73,13 +84,22 @@ static void test_smp_message_new_from_static_with_id(void)
             42);
     CU_ASSERT_PTR_NULL(msg);
 
-    msg = smp_message_new_from_static_with_id(&smsg, sizeof(smsg), NULL, 0, 42);
+    msg = smp_message_new_from_static_with_id(&smsg, sizeof(smsg), NULL,
+            SMP_N_ELEMENTS(storage), 42);
+    CU_ASSERT_PTR_NULL(msg);
+
+    msg = smp_message_new_from_static_with_id(&smsg, sizeof(smsg), storage, 0,
+            42);
+    CU_ASSERT_PTR_NULL(msg);
+
+    msg = smp_message_new_from_static_with_id(&smsg, sizeof(smsg), storage,
+            SMP_N_ELEMENTS(storage), 42);
     CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
 
     CU_ASSERT_EQUAL(smp_message_get_msgid(msg), 42);
 
-    msg = smp_message_new_from_static_with_id(&smsg, sizeof(smsg) + 10, NULL, 0,
-            42);
+    msg = smp_message_new_from_static_with_id(&smsg, sizeof(smsg) + 10, storage,
+            SMP_N_ELEMENTS(storage), 42);
     CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
 
     CU_ASSERT_EQUAL(smp_message_get_msgid(msg), 42);
@@ -122,6 +142,10 @@ static void setup_test_message_get(SmpMessage **msg)
     tmp->values[11].value.f32 = f32_orig_value;
     tmp->values[12].type = SMP_TYPE_F64;
     tmp->values[12].value.f64 = f64_orig_value;
+
+    /* for out test, always keep a value at the end */
+    tmp->values[13].type = SMP_TYPE_UINT8;
+    tmp->values[13].value.i64 = 0;
 
     *msg = tmp;
 }
@@ -310,7 +334,7 @@ static void test_smp_message_get_##type(void) \
 \
     /* fail if value is not initialized, ie NONE */ \
     ret = smp_message_get_##type(msg, SMP_MESSAGE_MAX_VALUES - 1, &tmp); \
-    CU_ASSERT_EQUAL(ret, SMP_ERROR_BAD_TYPE); \
+    CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND); \
 \
     /* fail if we have the wrong type */ \
     ret = smp_message_get_##type(msg, (index) + 1, &tmp); \
@@ -350,7 +374,7 @@ static void test_smp_message_get_cstring(void)
 
     /* fail if value is not initialized, ie NONE */
     ret = smp_message_get_cstring(msg, SMP_MESSAGE_MAX_VALUES - 1, &str);
-    CU_ASSERT_EQUAL(ret, SMP_ERROR_BAD_TYPE);
+    CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
 
     /* fail if we have the wrong type */
     ret = smp_message_get_cstring(msg, 0, &str);
@@ -379,7 +403,7 @@ static void test_smp_message_get_craw(void)
 
     /* fail if value is not initialized, ie NONE */
     ret = smp_message_get_craw(msg, SMP_MESSAGE_MAX_VALUES - 1, &raw, &size);
-    CU_ASSERT_EQUAL(ret, SMP_ERROR_BAD_TYPE);
+    CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
 
     /* fail if we have the wrong type */
     ret = smp_message_get_craw(msg, 0, &raw, &size);
