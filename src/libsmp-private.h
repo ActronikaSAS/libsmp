@@ -53,4 +53,7 @@ typedef signed __int64 ssize_t;
 #define SMP_STATIC_ASSERT(cond) \
     typedef char SMP_CONCAT(static_assertion, __LINE__)[cond ? 1 : -1];
 
+int smp_message_build_from_buffer(SmpMessage *msg, const uint8_t *buffer,
+        size_t size);
+
 #endif

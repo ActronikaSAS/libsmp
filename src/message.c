@@ -350,6 +350,47 @@ static size_t smp_message_compute_max_encoded_size(SmpMessage *msg)
     return ret;
 }
 
+/* Internal API */
+int smp_message_build_from_buffer(SmpMessage *msg, const uint8_t *buffer,
+        size_t size)
+{
+    size_t argsize;
+    size_t offset;
+    size_t i;
+
+    return_val_if_fail(msg != NULL, SMP_ERROR_INVALID_PARAM);
+    return_val_if_fail(buffer != NULL, SMP_ERROR_INVALID_PARAM);
+
+    if (size < MSG_HEADER_SIZE)
+        return SMP_ERROR_BAD_MESSAGE;
+
+    /* parse header */
+    msg->msgid = smp_read_uint32(buffer);
+    argsize = smp_read_uint32(buffer + 4);
+
+    if (size < MSG_HEADER_SIZE + argsize)
+        return SMP_ERROR_BAD_MESSAGE;
+
+    offset = MSG_HEADER_SIZE;
+    for (i = 0; size - offset > 0 && i < msg->capacity; i++) {
+        int ret;
+
+        ret = smp_message_decode_value(&msg->pvalues[i], buffer + offset,
+                size - offset);
+        if (ret < 0)
+            return ret;
+
+        offset += ret;
+    }
+
+    if (size - offset > 0) {
+        /* we reached the maximum number of values */
+        return SMP_ERROR_TOO_BIG;
+    }
+
+    return 0;
+}
+
 /* API */
 
 /**
@@ -488,41 +529,11 @@ void smp_message_init(SmpMessage *msg, uint32_t msgid)
 int smp_message_init_from_buffer(SmpMessage *msg, const uint8_t *buffer,
         size_t size)
 {
-    size_t argsize;
-    size_t offset;
-    size_t i;
-
     return_val_if_fail(msg != NULL, SMP_ERROR_INVALID_PARAM);
     return_val_if_fail(buffer != NULL, SMP_ERROR_INVALID_PARAM);
 
-    if (size < MSG_HEADER_SIZE)
-        return SMP_ERROR_BAD_MESSAGE;
-
-    /* parse header */
-    smp_message_init(msg, smp_read_uint32(buffer));
-    argsize = smp_read_uint32(buffer + 4);
-
-    if (size < MSG_HEADER_SIZE + argsize)
-        return SMP_ERROR_BAD_MESSAGE;
-
-    offset = MSG_HEADER_SIZE;
-    for (i = 0; size - offset > 0 && i < msg->capacity; i++) {
-        int ret;
-
-        ret = smp_message_decode_value(&msg->pvalues[i], buffer + offset,
-                size - offset);
-        if (ret < 0)
-            return ret;
-
-        offset += ret;
-    }
-
-    if (size - offset > 0) {
-        /* we reached the maximum number of values */
-        return SMP_ERROR_TOO_BIG;
-    }
-
-    return 0;
+    smp_message_init(msg, 0);
+    return smp_message_build_from_buffer(msg, buffer, size);
 }
 
 /**
