@@ -395,6 +395,15 @@ static void test_smp_context_static_api(void)
     test_teardown(&tctx);
 }
 
+SMP_DEFINE_STATIC_CONTEXT(test_macro, 32, 64, 128, 16);
+static void test_smp_context_static_macro_helper()
+{
+    SmpContext *ctx;
+
+    ctx = test_macro_create(&simple_cbs, NULL);
+    CU_ASSERT_PTR_NOT_NULL(ctx);
+}
+
 typedef struct
 {
     const char *name;
@@ -408,6 +417,7 @@ static Test tests[] = {
     DEFINE_TEST(test_smp_context_receive_valid_message),
     DEFINE_TEST(test_smp_context_receive_corrupted_message),
     DEFINE_TEST(test_smp_context_static_api),
+    DEFINE_TEST(test_smp_context_static_macro_helper),
     { NULL, NULL }
 };
 

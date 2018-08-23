@@ -405,6 +405,58 @@ typedef struct SmpSerialProtocolDecoder SmpSerialProtocolDecoder;
 #ifdef SMP_ENABLE_STATIC_API
 #include <libsmp-static.h>
 
+/**
+ * \ingroup context
+ * Helper macro to completely define a SmpContext using static storage with
+ * provided buffer size.
+ * It defines a function which should be called in your code. The function
+ * name is the concatenation of provided 'name' and '_create' and return
+ * a SmpContext*. The function prototype is:
+ * `SmpContext *name_create(const SmpEventCallbacks *cbs, void *userdata)`
+ * See smp_context_new() for parameters description.
+ *
+ * @param[in] name the name of the context
+ * @param[in] serial_rx_bufsize the size of the serial rx buffer
+ * @param[in] serial_tx_bufsize the size of the serial tx buffer
+ * @param[in] msg_tx_bufsize the size of the message buffer for tx
+ * @param[in] msg_rx_values_size the maximum number of values in the rx message
+ */
+#define SMP_DEFINE_STATIC_CONTEXT(name, serial_rx_bufsize, serial_tx_bufsize, \
+        msg_tx_bufsize, msg_rx_values_size)            \
+static SmpContext* name##_create(const SmpEventCallbacks *cbs, void *userdata)\
+{                                                                             \
+    static struct {                                                           \
+        SmpStaticContext ctx;                                                 \
+        SmpStaticSerialProtocolDecoder decoder;                               \
+        SmpStaticBuffer serial_tx;                                            \
+        SmpStaticBuffer msg_tx;                                               \
+        SmpStaticMessage msg_rx;                                              \
+        uint8_t serial_rx_buf[serial_rx_bufsize];                             \
+        uint8_t serial_tx_buf[serial_tx_bufsize];                             \
+        uint8_t msg_tx_buf[msg_tx_bufsize];                                   \
+        SmpValue msg_rx_values[msg_rx_values_size];                           \
+    } sctx;                                                                   \
+    SmpContext *ctx;                                                          \
+    SmpSerialProtocolDecoder *decoder;                                        \
+    SmpBuffer *serial_tx;                                                     \
+    SmpBuffer *msg_tx;                                                        \
+    SmpMessage *msg_rx;                                                       \
+                                                                              \
+    serial_tx = smp_buffer_new_from_static(&sctx.serial_tx,                   \
+            sizeof(sctx.serial_tx), sctx.serial_tx_buf,                       \
+            sizeof(sctx.serial_tx_buf), NULL);                                \
+    msg_tx = smp_buffer_new_from_static(&sctx.msg_tx, sizeof(sctx.msg_tx),    \
+            sctx.msg_tx_buf, sizeof(sctx.msg_tx_buf), NULL);                  \
+    msg_rx = smp_message_new_from_static(&sctx.msg_rx, sizeof(sctx.msg_rx),   \
+            sctx.msg_rx_values, msg_rx_values_size);                          \
+    decoder = smp_serial_protocol_decoder_new_from_static(&sctx.decoder,      \
+            sizeof(sctx.decoder), sctx.serial_rx_buf,                         \
+            sizeof(sctx.serial_rx_buf));                                      \
+    ctx = smp_context_new_from_static(&sctx.ctx, sizeof(sctx.ctx), cbs,       \
+        userdata, decoder, serial_tx, msg_tx, msg_rx);                        \
+    return ctx;                                                               \
+}
+
 SMP_API SmpBuffer *smp_buffer_new_from_static(SmpStaticBuffer *sbuffer,
                 size_t struct_size, uint8_t *data, size_t maxsize,
                 SmpBufferFreeFunc free_func);
