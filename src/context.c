@@ -55,16 +55,29 @@ static void smp_context_notify_error(SmpContext *ctx, SmpError err)
 static void smp_context_process_serial_frame(SmpContext *ctx, uint8_t *frame,
         size_t framesize)
 {
-    SmpMessage msg;
+    SmpMessage *msg;
     int ret;
 
-    ret = smp_message_init_from_buffer(&msg, frame, framesize);
+    if (ctx->msg_rx != NULL)
+        msg = ctx->msg_rx;
+    else
+        msg = smp_message_new();
+
+    if (msg == NULL) {
+        smp_context_notify_error(ctx, SMP_ERROR_NO_MEM);
+        return;
+    }
+
+    ret = smp_message_build_from_buffer(msg, frame, framesize);
     if (ret < 0) {
         smp_context_notify_error(ctx, ret);
         return;
     };
 
-    smp_context_notify_new_message(ctx, &msg);
+    smp_context_notify_new_message(ctx, msg);
+
+    if (ctx->msg_rx == NULL)
+        smp_message_free(msg);
 }
 
 /* API */
@@ -117,7 +130,7 @@ SmpContext *smp_context_new(const SmpEventCallbacks *cbs, void *userdata)
 SmpContext *smp_context_new_from_static(SmpStaticContext *sctx,
         size_t struct_size, const SmpEventCallbacks *cbs, void *userdata,
         SmpSerialProtocolDecoder *decoder, SmpBuffer *serial_tx,
-        SmpBuffer *msg_tx)
+        SmpBuffer *msg_tx, SmpMessage *msg_rx)
 {
     SmpContext *ctx = (SmpContext *) sctx;
 
@@ -127,11 +140,13 @@ SmpContext *smp_context_new_from_static(SmpStaticContext *sctx,
     return_val_if_fail(decoder != NULL, NULL);
     return_val_if_fail(msg_tx != NULL, NULL);
     return_val_if_fail(serial_tx != NULL, NULL);
+    return_val_if_fail(msg_rx != NULL, NULL);
 
     smp_context_init(ctx, decoder, cbs, userdata, true);
 
     ctx->serial_tx = serial_tx;
     ctx->msg_tx = msg_tx;
+    ctx->msg_rx = msg_rx;
 
     return ctx;
 }

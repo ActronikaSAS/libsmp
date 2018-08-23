@@ -37,6 +37,7 @@ struct SmpContext
     bool statically_allocated;
     SmpBuffer *msg_tx;
     SmpBuffer *serial_tx;
+    SmpMessage *msg_rx;
 };
 
 #endif

@@ -14,6 +14,8 @@
 #define START_BYTE 0x10
 #define END_BYTE 0xFF
 
+#define SMP_N_ELEMENTS(arr) (sizeof(arr) / sizeof(arr[0]))
+
 typedef struct
 {
     int fd; /* device fd */
@@ -269,9 +271,12 @@ static void test_smp_context_static_api(void)
     SmpStaticSerialProtocolDecoder sdecoder;
     SmpStaticBuffer sserial_tx;
     SmpStaticBuffer smsg_tx;
+    SmpStaticMessage smsg_rx;
+    SmpValue values_storage[16];
     uint8_t tx_serial_buffer[32];
     uint8_t rx_serial_buffer[32];
     uint8_t msg_buffer[16];
+    SmpMessage *msg_rx;
     SmpMessage msg;
 
     test_setup(&tctx);
@@ -288,41 +293,52 @@ static void test_smp_context_static_api(void)
             sizeof(sdecoder), rx_serial_buffer, sizeof(rx_serial_buffer));
     CU_ASSERT_PTR_NOT_NULL_FATAL(decoder);
 
+    msg_rx = smp_message_new_from_static(&smsg_rx, sizeof(smsg_rx),
+            values_storage, SMP_N_ELEMENTS(values_storage));
+    CU_ASSERT_PTR_NOT_NULL_FATAL(decoder);
+
     /* testing with invalid args should fail */
-    ctx = smp_context_new_from_static(NULL, 0, NULL, NULL, NULL, NULL, NULL);
+    ctx = smp_context_new_from_static(NULL, 0, NULL, NULL, NULL, NULL, NULL,
+            NULL);
     CU_ASSERT_PTR_NULL(ctx);
 
     ctx = smp_context_new_from_static(NULL, sizeof(sctx), &simple_cbs, NULL,
-            decoder, serial_tx, msg_tx);
+            decoder, serial_tx, msg_tx, msg_rx);
     CU_ASSERT_PTR_NULL(ctx);
 
     ctx = smp_context_new_from_static(&sctx, sizeof(sctx) - 1, &simple_cbs, NULL,
-            decoder, serial_tx, msg_tx);
+            decoder, serial_tx, msg_tx, msg_rx);
     CU_ASSERT_PTR_NULL(ctx);
 
     ctx = smp_context_new_from_static(&sctx, sizeof(sctx), NULL, NULL,
-            decoder, serial_tx, msg_tx);
+            decoder, serial_tx, msg_tx, msg_rx);
     CU_ASSERT_PTR_NULL(ctx);
 
     ctx = smp_context_new_from_static(&sctx, sizeof(sctx), &simple_cbs, NULL,
-            NULL, serial_tx, msg_tx);
+            NULL, serial_tx, msg_tx, msg_rx);
     CU_ASSERT_PTR_NULL(ctx);
 
     ctx = smp_context_new_from_static(&sctx, sizeof(sctx), &simple_cbs, NULL,
-            decoder, NULL, msg_tx);
+            decoder, NULL, msg_tx, msg_rx);
     CU_ASSERT_PTR_NULL(ctx);
 
     ctx = smp_context_new_from_static(&sctx, sizeof(sctx), &simple_cbs, NULL,
-            decoder, serial_tx, NULL);
+            decoder, serial_tx, NULL, msg_rx);
+    CU_ASSERT_PTR_NULL(ctx);
+
+    ctx = smp_context_new_from_static(&sctx, sizeof(sctx), &simple_cbs, NULL,
+            decoder, serial_tx, msg_tx, NULL);
     CU_ASSERT_PTR_NULL(ctx);
 
     /* should work */
     ctx = smp_context_new_from_static(&sctx, sizeof(sctx), &test_cbs,
-            &test_smp_context_receive_message_case, decoder, serial_tx, msg_tx);
+            &test_smp_context_receive_message_case, decoder, serial_tx, msg_tx,
+            msg_rx);
     CU_ASSERT_PTR_NOT_NULL(ctx);
 
     ctx = smp_context_new_from_static(&sctx, sizeof(sctx) + 1, &test_cbs,
-            &test_smp_context_receive_message_case, decoder, serial_tx, msg_tx);
+            &test_smp_context_receive_message_case, decoder, serial_tx, msg_tx,
+            msg_rx);
     CU_ASSERT_PTR_NOT_NULL(ctx);
 
     /* sending a basic message should work */

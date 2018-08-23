@@ -416,7 +416,7 @@ smp_serial_protocol_decoder_new_from_static(SmpStaticSerialProtocolDecoder *sdec
 SMP_API SmpContext *smp_context_new_from_static(SmpStaticContext *sctx,
                 size_t struct_size, const SmpEventCallbacks *cbs,
                 void *userdata, SmpSerialProtocolDecoder *decoder,
-                SmpBuffer *serial_tx, SmpBuffer *msg_tx);
+                SmpBuffer *serial_tx, SmpBuffer *msg_tx, SmpMessage *msg_rx);
 
 SMP_API SmpMessage *smp_message_new_from_static(SmpStaticMessage *smsg,
                 size_t struct_size, SmpValue *values, size_t capacity);
