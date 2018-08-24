@@ -876,6 +876,17 @@ static void test_smp_message_init_from_buffer(void)
     smp_message_free(msg);
 }
 
+SMP_DEFINE_STATIC_MESSAGE(test_macro, 4)
+static void test_smp_message_static_helper_macro(void)
+{
+    SmpMessage *message;
+
+    message = test_macro_create(42);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(message);
+
+    CU_ASSERT_EQUAL(smp_message_get_msgid(message), 42);
+}
+
 typedef struct
 {
     const char *name;
@@ -917,6 +928,8 @@ static Test tests[] = {
     { "test_smp_message_set_craw", test_smp_message_set_craw },
     { "test_smp_message_encode", test_smp_message_encode },
     { "test_smp_message_init_from_buffer", test_smp_message_init_from_buffer },
+    { "test_smp_message_static_helper_macro",
+        test_smp_message_static_helper_macro},
     { NULL, NULL }
 };
 

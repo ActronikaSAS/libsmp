@@ -464,6 +464,26 @@ static SmpContext* name##_create(const SmpEventCallbacks *cbs, void *userdata)\
     return ctx;                                                               \
 }
 
+/**
+ * \ingroup message
+ * Helper macro to define a SmpMessage using static storage.
+ * It defines a function to be called in your code by concatenating `name` and
+ * `_create()` and return a pointer to the SmpMessage.
+ * The created function takes the msg id as the first parameter.
+ *
+ * @param[in] name the name to use
+ * @param[in] max_values the maximum number of values in the message
+ */
+#define SMP_DEFINE_STATIC_MESSAGE(name, max_values)                           \
+static SmpMessage* name##_create(int id)                                      \
+{                                                                             \
+    static SmpStaticMessage smsg;                                             \
+    static SmpValue values[max_values];                                       \
+                                                                              \
+    return smp_message_new_from_static_with_id(&smsg, sizeof(smsg), values,   \
+            max_values, id);                                                  \
+}
+
 SMP_API SmpBuffer *smp_buffer_new_from_static(SmpStaticBuffer *sbuffer,
                 size_t struct_size, uint8_t *data, size_t maxsize,
                 SmpBufferFreeFunc free_func);
