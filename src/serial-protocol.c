@@ -32,7 +32,12 @@
 #define ESC_BYTE 0x1B
 
 #define DEFAULT_BUFFER_SIZE 1024
+
+#ifdef __AVR
+#define DEFAULT_MAXIMUM_DECODER_BUFFER_SIZE (512) /* 512 B */
+#else
 #define DEFAULT_MAXIMUM_DECODER_BUFFER_SIZE (1 * 1024 * 1024) /* 1 MB */
+#endif
 
 SMP_STATIC_ASSERT(sizeof(SmpSerialProtocolDecoder)
         == sizeof(SmpStaticSerialProtocolDecoder));
