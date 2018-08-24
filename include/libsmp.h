@@ -208,6 +208,7 @@ SMP_API ssize_t smp_message_encode(SmpMessage *msg, uint8_t *buffer, size_t size
 SMP_API size_t smp_message_get_encoded_size(SmpMessage *msg);
 
 SMP_API uint32_t smp_message_get_msgid(SmpMessage *msg);
+SMP_API void smp_message_set_id(SmpMessage *msg, uint32_t id);
 SMP_API int smp_message_n_args(SmpMessage *msg);
 
 SMP_API int smp_message_get(SmpMessage *msg, int index, ...);

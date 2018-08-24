@@ -609,6 +609,20 @@ uint32_t smp_message_get_msgid(SmpMessage *msg)
 
 /**
  * \ingroup message
+ * Set the ID of the message without resetting the values
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] id the id to set
+ */
+void smp_message_set_id(SmpMessage *msg, uint32_t id)
+{
+    return_if_fail(msg != NULL);
+
+    msg->msgid = id;
+}
+
+/**
+ * \ingroup message
  * Get the number of valid arguments in a message.
  *
  * @param[in] msg a SmpMessage
