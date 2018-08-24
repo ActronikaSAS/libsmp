@@ -545,6 +545,9 @@ int smp_message_init_from_buffer(SmpMessage *msg, const uint8_t *buffer,
 void smp_message_clear(SmpMessage *msg)
 {
     return_if_fail(msg != NULL);
+
+    msg->msgid = 0;
+    memset(msg->pvalues, 0, msg->capacity * sizeof(SmpValue));
 }
 
 /**
