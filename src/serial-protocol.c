@@ -14,6 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/**
+ * @file
+ * \defgroup serial-protocol SerialProtocol
+ */
 
 #include "serial-protocol.h"
 
@@ -218,6 +222,17 @@ SmpSerialProtocolDecoder *smp_serial_protocol_decoder_new(size_t bufsize)
     return decoder;
 }
 
+/**
+ * \ingroup serial-protocol
+ * Create a new SmpSerialProtocolDecoder using static storage.
+ *
+ * @param[in] sdec a SmpStaticSerialProtocolDecoder
+ * @param[in] struct_size size of the provided sdec
+ * @param[in] buf pointer to a buffer which will be used in reception
+ * @param[in] bufsize size of the buffer
+ *
+ * @return a pointer to a SmpSerialProtocolDecoder or NULL on error.
+ */
 SmpSerialProtocolDecoder *smp_serial_protocol_decoder_new_from_static(
         SmpStaticSerialProtocolDecoder *sdec, size_t struct_size, uint8_t *buf,
         size_t bufsize)
