@@ -73,6 +73,13 @@ typedef long ssize_t;
 typedef signed __int64 ssize_t;
 #endif
 
+/**
+ * \defgroup error Error
+ * Error enumeration
+ */
+/**
+ * \ingroup error
+ */
 typedef enum
 {
     /** No error */
