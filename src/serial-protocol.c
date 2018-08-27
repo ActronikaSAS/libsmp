@@ -85,7 +85,7 @@ smp_serial_protocol_decoder_set_capacity(SmpSerialProtocolDecoder *decoder,
     if (decoder->statically_allocated)
         return SMP_ERROR_TOO_BIG;
 
-    if (capacity > DEFAULT_MAXIMUM_DECODER_BUFFER_SIZE)
+    if (capacity > decoder->maxsize)
         return SMP_ERROR_TOO_BIG;
 
     new_ptr = realloc(decoder->buf, capacity);
@@ -195,10 +195,12 @@ static int smp_serial_protocol_decoder_init(SmpSerialProtocolDecoder *decoder,
     decoder->statically_allocated = statically_allocated;
 
     if (buf == NULL) {
+        decoder->maxsize = DEFAULT_MAXIMUM_DECODER_BUFFER_SIZE;
         ret = smp_serial_protocol_decoder_set_capacity(decoder, bufsize);
     } else {
         decoder->buf = buf;
         decoder->bufsize = bufsize;
+        decoder->maxsize = bufsize;
     }
 
     return ret;
@@ -314,6 +316,17 @@ int smp_serial_protocol_decoder_process_byte(SmpSerialProtocolDecoder *decoder,
     }
 
     return ret;
+}
+
+int smp_serial_protocol_decoder_set_maximum_capacity(
+        SmpSerialProtocolDecoder *decoder, size_t max)
+{
+    return_val_if_fail(decoder != NULL, SMP_ERROR_INVALID_PARAM);
+    /* at least a payload of 1 bytes */
+    return_val_if_fail(max >= 5, SMP_ERROR_INVALID_PARAM);
+
+    decoder->maxsize = max;
+    return 0;
 }
 
 /* if *outbuf == NULL, it will be allocated */

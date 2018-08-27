@@ -396,6 +396,8 @@ SMP_API int smp_context_send_message(SmpContext *ctx, SmpMessage *msg);
 SMP_API int smp_context_process_fd(SmpContext *ctx);
 SMP_API int smp_context_wait_and_process(SmpContext *ctx, int timeout_ms);
 
+SMP_API int smp_context_set_decoder_maximum_capacity(SmpContext *ctx, size_t max);
+
 /* Buffer API */
 typedef struct SmpBuffer SmpBuffer;
 

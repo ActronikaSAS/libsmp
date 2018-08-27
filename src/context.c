@@ -391,3 +391,22 @@ int smp_context_wait_and_process(SmpContext *ctx, int timeout_ms)
 
     return ret;
 }
+
+/**
+ * \ingroup context
+ * Set decoder buffer maximum capacity. This value is used as a limit when
+ * reallocating memory for the decoder. If the value is lower than the current
+ * capacity, the buffer won't be reallocated
+ *
+ * @param[in] ctx the SmpContext
+ * @param[in] max the maximum buffer capacity in bytes
+ *
+ * @return 0 on success, a SmpError otherwise.
+ */
+int smp_context_set_decoder_maximum_capacity(SmpContext *ctx, size_t max)
+{
+    return_val_if_fail(ctx != NULL, SMP_ERROR_INVALID_PARAM);
+    return_val_if_fail(max > 16, SMP_ERROR_INVALID_PARAM);
+
+    return smp_serial_protocol_decoder_set_maximum_capacity(ctx->decoder, max);
+}

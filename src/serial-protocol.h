@@ -38,6 +38,7 @@ struct SmpSerialProtocolDecoder
     uint8_t *buf;
     size_t bufsize;
     size_t offset;
+    size_t maxsize;
 
     bool statically_allocated;
 };
@@ -48,6 +49,8 @@ SmpSerialProtocolDecoder *smp_serial_protocol_decoder_new(size_t bufsize);
 void smp_serial_protocol_decoder_free(SmpSerialProtocolDecoder * decoder);
 int smp_serial_protocol_decoder_process_byte(SmpSerialProtocolDecoder *decoder,
         uint8_t byte, uint8_t **frame, size_t *framesize);
+int smp_serial_protocol_decoder_set_maximum_capacity(SmpSerialProtocolDecoder *decoder,
+        size_t max);
 
 /* Encoder API */
 ssize_t smp_serial_protocol_encode(const uint8_t *inbuf, size_t insize,

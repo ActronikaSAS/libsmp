@@ -512,6 +512,27 @@ static void test_smp_serial_protocol_decoder_resize_decoder(void)
     test_decoder_free(ctx);
 }
 
+static void test_smp_serial_protocol_decoder_resize_decoder_limit(void)
+{
+    TestDecoderCtx *ctx;
+    uint8_t payload[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
+    int ret;
+
+    ctx = test_decoder_new_full(8, payload, sizeof(payload), true);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(ctx);
+
+    ret = smp_serial_protocol_decoder_set_maximum_capacity(NULL, 8);
+    CU_ASSERT_EQUAL(ret, SMP_ERROR_INVALID_PARAM);
+
+    ret = smp_serial_protocol_decoder_set_maximum_capacity(ctx->decoder, 4);
+    CU_ASSERT_EQUAL(ret, SMP_ERROR_INVALID_PARAM);
+
+    smp_serial_protocol_decoder_set_maximum_capacity(ctx->decoder, 8);
+
+    ret = test_decoder_process_payload(ctx);
+    CU_ASSERT_EQUAL(ret, SMP_ERROR_TOO_BIG);
+}
+
 typedef struct
 {
     const char *name;
@@ -533,6 +554,7 @@ static Test tests[] = {
     DEFINE_TEST(test_smp_serial_protocol_decoder_frames_and_garbage),
     DEFINE_TEST(test_smp_serial_protocol_decoder_start_end),
     DEFINE_TEST(test_smp_serial_protocol_decoder_resize_decoder),
+    DEFINE_TEST(test_smp_serial_protocol_decoder_resize_decoder_limit),
     { NULL, NULL }
 };
 
