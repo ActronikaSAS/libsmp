@@ -211,11 +211,19 @@ static void test_smp_serial_protocol_decoder_new_from_static(void)
             sizeof(sdecoder), buf, sizeof(buf));
     CU_ASSERT_PTR_NOT_NULL(decoder);
     CU_ASSERT_PTR_EQUAL(decoder, &sdecoder);
+    CU_ASSERT_PTR_EQUAL(decoder->buf, buf);
+    CU_ASSERT_PTR_EQUAL(decoder->bufsize, sizeof(buf));
+    CU_ASSERT_PTR_EQUAL(decoder->maxsize, sizeof(buf));
+    CU_ASSERT_PTR_EQUAL(decoder->statically_allocated, true);
 
     decoder = smp_serial_protocol_decoder_new_from_static(&sdecoder,
             sizeof(sdecoder) + 1, buf, sizeof(buf));
     CU_ASSERT_PTR_NOT_NULL(decoder);
     CU_ASSERT_PTR_EQUAL(decoder, &sdecoder);
+    CU_ASSERT_PTR_EQUAL(decoder->buf, buf);
+    CU_ASSERT_PTR_EQUAL(decoder->bufsize, sizeof(buf));
+    CU_ASSERT_PTR_EQUAL(decoder->maxsize, sizeof(buf));
+    CU_ASSERT_PTR_EQUAL(decoder->statically_allocated, true);
 }
 
 typedef struct {
