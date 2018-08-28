@@ -1,5 +1,5 @@
 project('smp', 'c', 'cpp',
-    version : '0.5.90',
+    version : '0.5.90.1',
     meson_version : '>= 0.43.0',
     default_options : [
       'warning_level=2'
