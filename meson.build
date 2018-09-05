@@ -71,6 +71,11 @@ if c_compiler.has_function('poll', prefix: '#include <poll.h>')
   cdata.set('HAVE_POLL_H', true)
 endif
 
+cpu_with_unaligned_access_support = [ 'x86', 'x86_64', 'ppc', 'ppc64', 's390x' ]
+if cpu_with_unaligned_access_support.contains(host_machine.cpu_family())
+  cdata.set('HAVE_UNALIGNED_ACCESS', true)
+endif
+
 cdata.set('AVR_ENABLE_SERIAL0', get_option('avr-enable-serial0'),
     description : 'Enable AVR Serial0 handling')
 cdata.set('AVR_ENABLE_SERIAL1', get_option('avr-enable-serial1'),

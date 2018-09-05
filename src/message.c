@@ -33,6 +33,7 @@
 
 SMP_STATIC_ASSERT(sizeof(SmpMessage) == sizeof(SmpStaticMessage));
 
+#ifdef HAVE_UNALIGNED_ACCESS
 #define DEFINE_READ_FUNC(type) \
 static inline type##_t smp_read_##type(const uint8_t *data) \
 { \
@@ -44,6 +45,21 @@ static inline void smp_write_##type(uint8_t *data, type##_t value) \
 { \
     *((type##_t *) data) = value; \
 }
+#else
+#define DEFINE_READ_FUNC(type) \
+static inline type##_t smp_read_##type(const uint8_t *data) \
+{ \
+    type##_t val; \
+    memcpy(&val, data, sizeof(val)); \
+    return val; \
+}
+
+#define DEFINE_WRITE_FUNC(type) \
+static inline void smp_write_##type(uint8_t *data, type##_t value) \
+{ \
+    memcpy(data, &value, sizeof(value)); \
+}
+#endif /* HAVE_UNALIGNED_ACCESS */
 
 DEFINE_READ_FUNC(int16);
 DEFINE_READ_FUNC(uint16);
