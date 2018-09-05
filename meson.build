@@ -84,6 +84,9 @@ cdata.set('AVR_ENABLE_SERIAL2', get_option('avr-enable-serial2'),
     description : 'Enable AVR Serial2 handling')
 cdata.set('AVR_ENABLE_SERIAL3', get_option('avr-enable-serial3'),
     description : 'Enable AVR Serial3 handling')
+cdata.set('SMP_SERIAL_DEVICE_AVR_CBUF_SIZE',
+    get_option('avr-uart-buffer-size').to_int(),
+    description : 'The buffer size used for UART reception on AVR')
 
 configure_file(output : 'config.h',
     configuration: cdata)
@@ -96,9 +99,6 @@ cdata.set('SMP_MESSAGE_MAX_VALUES', get_option('message-max-values').to_int(),
 cdata.set('SMP_SERIAL_FRAME_MAX_FRAME_SIZE',
     get_option('serial-frame-max-size').to_int(),
     description : 'The maximum frame size in bytes')
-cdata.set('SMP_SERIAL_DEVICE_AVR_CBUF_SIZE',
-    get_option('avr-uart-buffer-size').to_int(),
-    description : 'The buffer size used for UART reception on AVR')
 
 configure_file(output : 'libsmp-config.h',
     configuration : cdata)
