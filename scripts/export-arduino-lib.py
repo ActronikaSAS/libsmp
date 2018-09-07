@@ -6,7 +6,7 @@ import sys
 import zipfile
 import tempfile
 import argparse
-
+import re
 
 OUTPUT_NAME = "libsmp.zip"  # default name
 INCLUDED_DIRS = ["docs"]  # directories copied as-is with their tree
@@ -23,7 +23,8 @@ EXCLUDED_FILES = [
     "libsmp-private-posix.h",
     "serial-device-avr.c",
     "serial-device-posix.c",
-    "serial-device-win32.c"
+    "serial-device-win32.c",
+    "libsmp-static.h.in"
 ]
 
 CONFIGURATION_PARAMETERS = {
@@ -35,6 +36,26 @@ CONFIGURATION_PARAMETERS = {
             "The maximum frame size in bytes")
     ]
 }
+
+LIBSMP_STATIC_FILENAME = 'libsmp-static.h'
+
+STATIC_GEN_MAP = [
+    ('src/buffer.h', 'SmpBuffer', 'SmpStaticBuffer'),
+    ('src/context.h', 'SmpContext', 'SmpStaticContext'),
+    ('include/libsmp.h', 'SmpMessage', 'SmpStaticMessage'),
+    ('src/serial-protocol.h', 'SmpSerialProtocolDecoder',
+        'SmpStaticSerialProtocolDecoder'),
+    ]
+
+STATIC_REP_LIST = [
+    ('SmpBufferFreeFunc', 'void *'),
+    ('SmpSerialProtocolDecoderState', 'int'),
+    ('SmpSerialProtocolDecoder', 'void'),
+    ('SmpSerialDevice', 'int'),
+    ('SmpEventCallbacks cbs', 'void *cbs[2]'),
+    ('SmpBuffer', 'void'),
+    ('SmpMessage', 'void'),
+    ]
 
 
 parser = argparse.ArgumentParser()
@@ -78,6 +99,72 @@ def generate_config_file(params):
     return cf.name
 
 
+def find_closing_brace(string, start):
+    sub = string[start:]
+    n_opbrace = 1
+    pos = start
+    for c in sub:
+        if c == '{':
+            n_opbrace += 1
+        elif c == '}':
+            n_opbrace -= 1
+
+        if n_opbrace == 0:
+            break
+
+        pos += 1
+
+    if n_opbrace:
+        return -1
+
+    return pos
+
+
+def extract_struct_content(header_path, struct_name):
+    with open(header_path) as fin:
+        data = fin.read()
+        res = re.search(r'struct ' + struct_name + '\s*({)\s*', data)
+        start = res.end(1)
+        end = find_closing_brace(data, start)
+        if end == -1:
+            print('no closing brace found in \'' + header_path
+                  + '\' for struct \'' + struct_name + '\'')
+            return ""
+
+        return data[start:end]
+
+
+def generate_static_file(base_dir):
+    cf = tempfile.NamedTemporaryFile(mode='w', delete=False)
+    cf.write('#pragma once\n\n'
+             '#include <stdint.h>\n'
+             '#include "libsmp.h"\n\n'
+             '#ifdef __cplusplus\n'
+             'extern "C" {\n'
+             '#endif\n\n')
+
+    for (header, struct_name, static_struct_name) in STATIC_GEN_MAP:
+        hdr_path = join(base_dir, header)
+        struct_content = extract_struct_content(hdr_path, struct_name)
+
+        cf.write('typedef struct ' + static_struct_name + ' '
+                 + static_struct_name + ';\n')
+        cf.write('struct ' + static_struct_name + ' {\n')
+
+        for (old, new) in STATIC_REP_LIST:
+            struct_content = struct_content.replace(old, new)
+
+        cf.write(struct_content)
+        cf.write('};\n')
+
+    cf.write('#ifdef __cplusplus\n'
+             '}\n'
+             '#endif')
+
+    cf.close()
+    return cf.name
+
+
 base_dir = join(dirname(realpath(__file__)), "..")
 output_file = zipfile.PyZipFile(OUTPUT_NAME, 'w')
 
@@ -95,6 +182,10 @@ for config_filename, parameters in CONFIGURATION_PARAMETERS.items():
     tmp_config_file = generate_config_file(parameters)
     output_file.write(tmp_config_file, config_filename)
     os.remove(tmp_config_file)
+
+static_file = generate_static_file(base_dir)
+output_file.write(static_file, LIBSMP_STATIC_FILENAME)
+os.remove(static_file)
 
 output_file.close()
 print("Arduino library generated:", join(os.getcwd(), OUTPUT_NAME))

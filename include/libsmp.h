@@ -183,7 +183,8 @@ typedef struct
  * @warning using this structure directly is deprecated, use smp_message_new or
  * smp_message_new_from_static to get a SmpMessage object
  */
-typedef struct
+typedef struct SmpMessage SmpMessage;
+struct SmpMessage
 {
     /** The message id */
     uint32_t msgid;
@@ -193,7 +194,7 @@ typedef struct
     size_t capacity;
 
     bool statically_allocated;
-} SmpMessage;
+};
 
 SMP_API SmpMessage *smp_message_new(void);
 SMP_API SmpMessage *smp_message_new_with_id(uint32_t id);

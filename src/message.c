@@ -23,6 +23,10 @@
 
 #include "config.h"
 
+#ifndef SMP_ENABLE_STATIC_API
+#define SMP_ENABLE_STATIC_API
+#endif
+
 #include "libsmp.h"
 #include "libsmp-private.h"
 #include <stdarg.h>
