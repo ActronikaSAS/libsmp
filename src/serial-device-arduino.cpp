@@ -145,7 +145,6 @@ static DeviceMap devmap[] = {
 #endif
 
 static int get_device_fd_by_name(const char *name)
-
 {
     size_t i;
 
