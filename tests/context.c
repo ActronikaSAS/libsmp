@@ -14,8 +14,6 @@
 #define START_BYTE 0x10
 #define END_BYTE 0xFF
 
-#define SMP_N_ELEMENTS(arr) (sizeof(arr) / sizeof(arr[0]))
-
 typedef struct
 {
     int fd; /* device fd */

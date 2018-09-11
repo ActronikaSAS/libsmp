@@ -22,6 +22,10 @@
 
 #define DEFINE_TEST(func) { #func, func }
 
+#ifndef SMP_N_ELEMENTS
+#define SMP_N_ELEMENTS(arr) (sizeof(arr) / sizeof(arr[0]))
+#endif
+
 CU_ErrorCode context_test_register(void);
 CU_ErrorCode serial_frame_test_register(void);
 CU_ErrorCode serial_protocol_test_register(void);

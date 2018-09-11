@@ -21,8 +21,6 @@
 #include <libsmp.h>
 #include "tests.h"
 
-#define SMP_N_ELEMENTS(arr) (sizeof((arr))/sizeof((arr)[0]))
-
 /* use static variable to be sure while comparing */
 static const float f32_orig_value = 1.42f;
 static const double f64_orig_value = 3.14;
