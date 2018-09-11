@@ -121,6 +121,8 @@ typedef enum
     SMP_ERROR_OTHER = -100,
 } SmpError;
 
+const char *smp_error_to_string(SmpError error);
+
 /* Message */
 
 /**

@@ -37,6 +37,7 @@ libsmp_incdir = include_directories(['include'])
 libsmp_src = [
     'src/buffer.c',
     'src/context.c',
+    'src/libsmp.c',
     'src/message.c',
     'src/serial_frame.c',
     'src/serial-protocol.c',
