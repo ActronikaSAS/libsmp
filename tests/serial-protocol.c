@@ -25,9 +25,8 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#include "tests.h"
-
 #include "serial-protocol.h"
+#include "tests.h"
 
 #define START_BYTE 0x10
 #define END_BYTE 0xFF
