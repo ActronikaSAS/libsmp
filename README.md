@@ -54,7 +54,7 @@ static SmpEventCallbacks cbs = {
     .error_cb = on_error,
 };
 
-SMP_DEFINE_STATIC_CONTEXT(my_smp_context, 128, 128, 128, 16, &cbs, NULL);
+SMP_DEFINE_STATIC_CONTEXT(my_smp_context, 128, 128, 128, 16);
 
 SMP_DEFINE_STATIC_MESSAGE(my_message, 16);
 
@@ -64,7 +64,7 @@ int main()
     SmpMessage *msg;
     int msgid = 42;
 
-    ctx = my_smp_context_create();
+    ctx = my_smp_context_create(&cbs, NULL);
     if (ctx == NULL)
         return 1;
 
