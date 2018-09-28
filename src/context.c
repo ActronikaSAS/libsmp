@@ -78,6 +78,8 @@ static void smp_context_process_serial_frame(SmpContext *ctx, uint8_t *frame,
 
     if (ctx->msg_rx == NULL)
         smp_message_free(msg);
+    else
+        smp_message_clear(msg);
 }
 
 /* API */
