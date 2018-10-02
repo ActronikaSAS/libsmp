@@ -18,6 +18,10 @@
 #ifndef SERIAL_PROTOCOL_H
 #define SERIAL_PROTOCOL_H
 
+#ifndef SMP_ENABLE_STATIC_API
+#define SMP_ENABLE_STATIC_API
+#endif
+
 #include "libsmp.h"
 #include "libsmp-private.h"
 
@@ -46,8 +50,6 @@ struct SmpSerialProtocolDecoder
 
     bool statically_allocated;
 };
-
-typedef struct SmpStaticSerialProtocolDecoder SmpStaticSerialProtocolDecoder;
 
 SmpSerialProtocolDecoder *smp_serial_protocol_decoder_new(size_t bufsize);
 void smp_serial_protocol_decoder_free(SmpSerialProtocolDecoder * decoder);
