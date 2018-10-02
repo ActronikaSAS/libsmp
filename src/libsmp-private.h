@@ -25,6 +25,10 @@
 #include <sys/types.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef __AVR
 /* we don't have sys/types.h in avr-libc so define ssize_t ourself */
 typedef long ssize_t;
@@ -55,5 +59,9 @@ typedef signed __int64 ssize_t;
 
 int smp_message_build_from_buffer(SmpMessage *msg, const uint8_t *buffer,
         size_t size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

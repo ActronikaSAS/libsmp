@@ -22,6 +22,10 @@
 
 #include "libsmp.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct SmpBuffer
 {
     uint8_t *data;     /* pointer to the data */
@@ -32,5 +36,9 @@ struct SmpBuffer
 
 SmpBuffer *smp_buffer_new_allocate(size_t size);
 void smp_buffer_free(SmpBuffer *buffer);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

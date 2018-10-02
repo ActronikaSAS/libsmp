@@ -24,6 +24,10 @@
 
 #include "serial-protocol.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct SmpContext
 {
     SmpSerialProtocolDecoder *decoder;
@@ -39,5 +43,9 @@ struct SmpContext
     SmpBuffer *serial_tx;
     SmpMessage *msg_rx;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
