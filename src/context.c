@@ -157,11 +157,16 @@ SmpContext *smp_context_new_from_static(SmpStaticContext *sctx,
  * \ingroup context
  * Free a SmpContext object.
  *
+ * It is safe to call this function on a statically allocated context.
+ *
  * @param[in] ctx the SmpContext
  */
 void smp_context_free(SmpContext *ctx)
 {
     return_if_fail(ctx != NULL);
+
+    if (ctx->statically_allocated)
+        return;
 
     free(ctx->decoder);
     free(ctx);
