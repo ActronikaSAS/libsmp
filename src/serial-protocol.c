@@ -19,6 +19,10 @@
  * \defgroup serial-protocol SerialProtocol
  */
 
+#ifndef SMP_ENABLE_STATIC_API
+#define SMP_ENABLE_STATIC_API
+#endif
+
 #include "serial-protocol.h"
 
 #include <stdlib.h>
