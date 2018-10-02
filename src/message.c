@@ -441,6 +441,7 @@ SmpMessage *smp_message_new_with_id(uint32_t id)
         return NULL;
 
     smp_message_init(msg, id);
+    msg->statically_allocated = false;
 
     return msg;
 }
@@ -494,6 +495,7 @@ SmpMessage *smp_message_new_from_static_with_id(SmpStaticMessage *smsg,
     msg->capacity = capacity;
 
     memset(msg->pvalues, 0, capacity * sizeof(SmpValue));
+    msg->statically_allocated = true;
 
     return msg;
 }
