@@ -188,7 +188,8 @@ libsmp = library('smp', libsmp_src,
     include_directories : [libsmp_incdir, libsmp_config_incdir],
     c_args : libsmp_flags,
     cpp_args : libsmp_flags,
-    dependencies : dependencies)
+    dependencies : dependencies,
+    install: true)
 
 libsmp_dep = declare_dependency(link_with : libsmp,
     include_directories : [libsmp_incdir, libsmp_config_incdir],
