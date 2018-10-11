@@ -104,6 +104,7 @@ int smp_serial_device_open(SmpSerialDevice *device, const char *path)
 void smp_serial_device_close(SmpSerialDevice *device)
 {
     close(device->fd);
+    device->fd = -1;
 }
 
 intptr_t smp_serial_device_get_fd(SmpSerialDevice *device)

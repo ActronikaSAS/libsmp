@@ -193,6 +193,7 @@ void smp_serial_device_close(SmpSerialDevice *sdev)
         return;
 
     serial->end();
+    sdev->fd = -1;
 }
 
 intptr_t smp_serial_device_get_fd(SmpSerialDevice *sdev)

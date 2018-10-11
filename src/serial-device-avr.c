@@ -371,6 +371,8 @@ void smp_serial_device_close(SmpSerialDevice *sdev)
     /* disable uart device */
     *regs->csr_b &= ~(_BV(RXEN0));
     *regs->csr_b &= ~(_BV(TXEN0));
+
+    sdev->fd = -1;
 }
 
 intptr_t smp_serial_device_get_fd(SmpSerialDevice *sdev)
