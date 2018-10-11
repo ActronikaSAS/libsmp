@@ -58,6 +58,11 @@ static int get_last_error_as_smp_error()
 }
 
 /* SerialDevice API */
+void smp_serial_device_init(SmpSerialDevice *device)
+{
+    device->handle = INVALID_HANDLE_VALUE;
+}
+
 int smp_serial_device_open(SmpSerialDevice *device, const char *path)
 {
     HANDLE handle;

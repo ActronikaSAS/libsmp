@@ -26,6 +26,7 @@
 extern "C" {
 #endif
 
+void smp_serial_device_init(SmpSerialDevice *device);
 int smp_serial_device_open(SmpSerialDevice *device, const char *path);
 void smp_serial_device_close(SmpSerialDevice *device);
 intptr_t smp_serial_device_get_fd(SmpSerialDevice *device);

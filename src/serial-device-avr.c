@@ -339,6 +339,11 @@ static int init_uart_device(UARTDevice *device)
 }
 
 /* SerialDevice API */
+void smp_serial_device_init(SmpSerialDevice *sdev)
+{
+    sdev->fd = -1;
+}
+
 int smp_serial_device_open(SmpSerialDevice *sdev, const char *path)
 {
     int ret = SMP_ERROR_NO_DEVICE;

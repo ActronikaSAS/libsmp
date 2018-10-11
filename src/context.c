@@ -34,6 +34,7 @@ static void smp_context_init(SmpContext *ctx, SmpSerialProtocolDecoder *decoder,
         const SmpEventCallbacks *cbs, void *userdata, bool statically_allocated)
 {
     ctx->decoder = decoder;
+    smp_serial_device_init(&ctx->device);
     ctx->cbs = *cbs;
     ctx->userdata = userdata;
     ctx->opened = false;

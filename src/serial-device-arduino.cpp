@@ -165,6 +165,11 @@ static ArduinoSerialCompatIface *get_device_from_fd(int fd)
 }
 
 /* SerialDevice API */
+void smp_serial_device_init(SmpSerialDevice *sdev)
+{
+    sdev->fd = -1;
+}
+
 int smp_serial_device_open(SmpSerialDevice *sdev, const char *path)
 {
     ArduinoSerialCompatIface *serial;

@@ -65,6 +65,11 @@ static SmpError errno_to_smp_error(int err)
     }
 }
 
+void smp_serial_device_init(SmpSerialDevice *device)
+{
+    device->fd = -1;
+}
+
 int smp_serial_device_open(SmpSerialDevice *device, const char *path)
 {
     int fd;
