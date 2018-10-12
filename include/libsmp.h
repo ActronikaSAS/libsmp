@@ -116,6 +116,8 @@ typedef enum
     SMP_ERROR_BAD_MESSAGE = -15,
     /** Entity is not the right type */
     SMP_ERROR_BAD_TYPE = -16,
+    /** Pipe error: device disconnected */
+    SMP_ERROR_PIPE = -17,
 
     /** Other error */
     SMP_ERROR_OTHER = -100,

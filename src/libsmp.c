@@ -21,7 +21,7 @@
 #include "libsmp.h"
 #include "libsmp-private.h"
 
-#define ERR_STR_ARRAY_SIZE ((-SMP_ERROR_BAD_TYPE) + 1)
+#define ERR_STR_ARRAY_SIZE ((-SMP_ERROR_PIPE) + 1)
 static const char * const errstr[ERR_STR_ARRAY_SIZE] = {
     "none",
     "invalid parameter",
@@ -40,6 +40,7 @@ static const char * const errstr[ERR_STR_ARRAY_SIZE] = {
     "overflow",
     "bad message",
     "bad field type",
+    "broken pipe",
 };
 
 /**

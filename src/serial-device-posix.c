@@ -211,6 +211,10 @@ ssize_t smp_serial_device_read(SmpSerialDevice *device, void *buf, size_t size)
     ssize_t ret;
 
     ret = read(device->fd, buf, size);
+    if (ret == 0) {
+        /* It means that we have reached EOF, so serial has been removed */
+        return SMP_ERROR_PIPE;
+    }
 
     return (ret < 0) ? errno_to_smp_error(errno) : ret;
 }
@@ -230,8 +234,14 @@ int smp_serial_device_wait(SmpSerialDevice *device, int timeout_ms)
         return errno_to_smp_error(errno);
     else if (ret == 0)
         return SMP_ERROR_TIMEDOUT;
-    else
-        return 0;
+
+    if (pfd.revents & POLLERR) {
+        /* we have an error on the fd, assume that it has been disconnected */
+        return SMP_ERROR_PIPE;
+    }
+
+    return 0;
+
 #else
     return SMP_ERROR_NOT_SUPPORTED;
 #endif

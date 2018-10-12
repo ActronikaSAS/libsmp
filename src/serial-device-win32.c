@@ -207,8 +207,15 @@ ssize_t smp_serial_device_write(SmpSerialDevice *device, const void *buf,
     BOOL bret;
 
     bret = WriteFile(device->handle, buf, size, &wbytes, NULL);
-    if (!bret)
+    if (!bret) {
+        DWORD err = GetLastError();
+        if (err == ERROR_ACCESS_DENIED) {
+            /* This likely indicate that the port has been disconnected/removed
+             */
+            return SMP_ERROR_PIPE;
+        }
         return get_last_error_as_smp_error();
+    }
 
     return wbytes;
 }
@@ -219,8 +226,16 @@ ssize_t smp_serial_device_read(SmpSerialDevice *device, void *buf, size_t size)
     BOOL bret;
 
     bret = ReadFile(device->handle, buf, size, &rbytes, NULL);
-    if (!bret)
+    if (!bret) {
+        DWORD err = GetLastError();
+        if (err == ERROR_ACCESS_DENIED) {
+            /* This likely indicate that the port has been disconnected/removed
+             */
+            return SMP_ERROR_PIPE;
+
+        }
         return get_last_error_as_smp_error();
+    }
 
     return rbytes;
 }
@@ -238,8 +253,13 @@ int smp_serial_device_wait(SmpSerialDevice *device, int timeout_ms)
             return 0;
         case WAIT_TIMEOUT:
             return SMP_ERROR_TIMEDOUT;
-        case WAIT_ABANDONED:
         case WAIT_FAILED:
+            if (GetLastError() == ERROR_GEN_FAILURE) {
+                /* this is the error code which is returned when device has
+                 * been removed */
+                return SMP_ERROR_PIPE;
+            }
+        case WAIT_ABANDONED:
         default:
             return SMP_ERROR_OTHER;
     }
