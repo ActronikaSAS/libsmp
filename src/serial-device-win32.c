@@ -74,7 +74,7 @@ int smp_serial_device_open(SmpSerialDevice *device, const char *path)
     handle = CreateFile(path, GENERIC_READ | GENERIC_WRITE, 0, NULL,
             OPEN_EXISTING, 0, NULL);
     if (handle == INVALID_HANDLE_VALUE)
-        return -get_last_error_as_smp_error();
+        return get_last_error_as_smp_error();
 
     dcb.DCBlength = sizeof(DCB);
 
@@ -82,7 +82,7 @@ int smp_serial_device_open(SmpSerialDevice *device, const char *path)
     if (!bret) {
         ret = get_last_error_as_smp_error();
         CloseHandle(handle);
-        return -ret;
+        return ret;
     }
 
     dcb.BaudRate = CBR_115200;
@@ -100,7 +100,7 @@ int smp_serial_device_open(SmpSerialDevice *device, const char *path)
     if (!bret) {
         ret = get_last_error_as_smp_error();
         CloseHandle(handle);
-        return -ret;
+        return ret;
     }
 
     /* Set com timeouts so we will never block on read */
@@ -114,7 +114,7 @@ int smp_serial_device_open(SmpSerialDevice *device, const char *path)
     if (!bret) {
         ret = get_last_error_as_smp_error();
         CloseHandle(handle);
-        return -ret;
+        return ret;
     }
 
     device->handle = handle;
@@ -142,7 +142,7 @@ int smp_serial_device_set_config(SmpSerialDevice *device,
 
     bret = GetCommState(device->handle, &dcb);
     if (!bret)
-        return -get_last_error_as_smp_error();
+        return get_last_error_as_smp_error();
 
     switch (baudrate) {
         case SMP_SERIAL_BAUDRATE_1200:
@@ -195,7 +195,7 @@ int smp_serial_device_set_config(SmpSerialDevice *device,
 
     bret = SetCommState(device->handle, &dcb);
     if (!bret)
-        return -get_last_error_as_smp_error();
+        return get_last_error_as_smp_error();
 
     return 0;
 }
@@ -208,7 +208,7 @@ ssize_t smp_serial_device_write(SmpSerialDevice *device, const void *buf,
 
     bret = WriteFile(device->handle, buf, size, &wbytes, NULL);
     if (!bret)
-        return -get_last_error_as_smp_error();
+        return get_last_error_as_smp_error();
 
     return wbytes;
 }
@@ -221,7 +221,6 @@ ssize_t smp_serial_device_read(SmpSerialDevice *device, void *buf, size_t size)
     bret = ReadFile(device->handle, buf, size, &rbytes, NULL);
     if (!bret)
         return get_last_error_as_smp_error();
-
 
     return rbytes;
 }
