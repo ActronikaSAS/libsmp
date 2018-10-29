@@ -8,6 +8,8 @@ project('smp', 'c', 'cpp',
 c_compiler = meson.get_compiler('c')
 cpp_compiler = meson.get_compiler('cpp')
 
+pkgconfig = import('pkgconfig')
+
 common_warning_flags = [
     '-Wno-unused-parameter',
     '-Wformat-nonliteral',
@@ -199,5 +201,14 @@ libsmp_dep = declare_dependency(link_with : libsmp,
     dependencies : dependencies)
 
 install_headers(['include/libsmp.h'])
+
+pkgconfig.generate(
+    name: 'smp',
+    description: 'Simple Message Protocol library',
+    version: meson.project_version(),
+    filebase: 'libsmp',
+    libraries: libsmp,
+    url: 'https://github.com/ActronikaSAS/libsmp'
+    )
 
 subdir('tests')
