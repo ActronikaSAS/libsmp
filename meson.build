@@ -102,7 +102,8 @@ cdata.set('SMP_SERIAL_FRAME_MAX_FRAME_SIZE',
     description : 'The maximum frame size in bytes')
 
 configure_file(output : 'libsmp-config.h',
-    configuration : cdata)
+    configuration : cdata,
+    install_dir: get_option('includedir'))
 
 libsmp_config_incdir = include_directories('.')
 
@@ -141,7 +142,9 @@ foreach obj : static_obj_list
   cdata.set(obj[2], size)
 endforeach
 configure_file(input: 'src/libsmp-static.h.in',
-    output: 'libsmp-static.h', configuration: cdata)
+    output: 'libsmp-static.h',
+    configuration: cdata,
+    install_dir: get_option('includedir'))
 
 
 dependencies = []
@@ -194,5 +197,7 @@ libsmp = library('smp', libsmp_src,
 libsmp_dep = declare_dependency(link_with : libsmp,
     include_directories : [libsmp_incdir, libsmp_config_incdir],
     dependencies : dependencies)
+
+install_headers(['include/libsmp.h'])
 
 subdir('tests')
