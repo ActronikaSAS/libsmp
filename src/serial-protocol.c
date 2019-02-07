@@ -56,8 +56,9 @@ static size_t compute_payload_size(const uint8_t *buf, size_t size)
     size_t ret;
     size_t i;
 
-    /* We need at least three extra bytes (START, END and CRC) */
-    ret = size + 3;
+    /* We need at least three extra bytes (START, END and CRC) and 1 extra
+     * byte in case the checksum has to be escaped */
+    ret = size + 4;
 
     /* count the number of extra bytes */
     for (i = 0; i < size; i++) {
