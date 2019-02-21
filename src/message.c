@@ -1065,16 +1065,16 @@ int smp_message_set(SmpMessage *msg, int index, ...)
 
         switch (val.type) {
             case SMP_TYPE_UINT8:
-                val.value.u8 = va_arg(ap, int);
+                val.value.u8 = (uint8_t) va_arg(ap, int);
                 break;
             case SMP_TYPE_INT8:
-                val.value.i8 = va_arg(ap, int);
+                val.value.i8 = (int8_t) va_arg(ap, int);
                 break;
             case SMP_TYPE_UINT16:
-                val.value.u16 = va_arg(ap, int);
+                val.value.u16 = (uint16_t) va_arg(ap, int);
                 break;
             case SMP_TYPE_INT16:
-                val.value.i16 = va_arg(ap, int);
+                val.value.i16 = (int16_t) va_arg(ap, int);
                 break;
             case SMP_TYPE_UINT32:
                 val.value.u32 = va_arg(ap, uint32_t);
@@ -1096,7 +1096,7 @@ int smp_message_set(SmpMessage *msg, int index, ...)
                 val.value.craw_size = va_arg(ap, size_t);
                 break;
             case SMP_TYPE_F32:
-                val.value.f32 = va_arg(ap, double);
+                val.value.f32 = (float) va_arg(ap, double);
                 break;
             case SMP_TYPE_F64:
                 val.value.f64 = va_arg(ap, double);
