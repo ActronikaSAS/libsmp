@@ -206,7 +206,10 @@ ssize_t smp_serial_device_write(SmpSerialDevice *device, const void *buf,
     DWORD wbytes;
     BOOL bret;
 
-    bret = WriteFile(device->handle, buf, size, &wbytes, NULL);
+    if (size > MAXDWORD)
+        return SMP_ERROR_OVERFLOW;
+
+    bret = WriteFile(device->handle, buf, (DWORD) size, &wbytes, NULL);
     if (!bret) {
         DWORD err = GetLastError();
         if (err == ERROR_ACCESS_DENIED) {
@@ -225,7 +228,10 @@ ssize_t smp_serial_device_read(SmpSerialDevice *device, void *buf, size_t size)
     DWORD rbytes;
     BOOL bret;
 
-    bret = ReadFile(device->handle, buf, size, &rbytes, NULL);
+    if (size > MAXDWORD)
+        return SMP_ERROR_OVERFLOW;
+
+    bret = ReadFile(device->handle, buf, (DWORD) size, &rbytes, NULL);
     if (!bret) {
         DWORD err = GetLastError();
         if (err == ERROR_ACCESS_DENIED) {
