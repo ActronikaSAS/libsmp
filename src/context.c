@@ -269,7 +269,7 @@ int smp_context_send_message(SmpContext *ctx, SmpMessage *msg)
     size_t serial_bufsize = 0;
     ssize_t encoded_size;
     ssize_t wbytes;
-    int ret;
+    ssize_t ret;
 
     return_val_if_fail(ctx != NULL, SMP_ERROR_INVALID_PARAM);
     return_val_if_fail(msg != NULL, SMP_ERROR_INVALID_PARAM);
@@ -331,7 +331,7 @@ done:
         free(serial_buf);
     }
 
-    return ret;
+    return (int) ret;
 }
 
 /**
@@ -361,7 +361,7 @@ int smp_context_process_fd(SmpContext *ctx)
             if (rbytes == SMP_ERROR_WOULD_BLOCK)
                 return 0;
 
-            return rbytes;
+            return (int) rbytes;
         } else if (rbytes == 0) {
             return 0;
         }
