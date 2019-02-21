@@ -143,19 +143,19 @@ int smp_serial_frame_send(SmpSerialFrameContext *ctx, const uint8_t *buf,
     uint8_t *ptxbuf = txbuf;
     size_t txbuf_size = SMP_SERIAL_FRAME_MAX_FRAME_SIZE;
     ssize_t encoded_size;
-    int ret;
+    ssize_t ret;
 
     return_val_if_fail(ctx != NULL, SMP_ERROR_INVALID_PARAM);
     return_val_if_fail(buf != NULL, SMP_ERROR_INVALID_PARAM);
 
     encoded_size = smp_serial_protocol_encode(buf, size, &ptxbuf, txbuf_size);
     if (encoded_size < 0)
-        return encoded_size;
+        return (int) encoded_size;
 
     /* send it */
     ret = smp_serial_device_write(&ctx->device, txbuf, encoded_size);
     if (ret < 0)
-        return ret;
+        return (int) ret;
 
     if (ret != encoded_size)
         return SMP_ERROR_OTHER;
@@ -188,7 +188,7 @@ int smp_serial_frame_process_recv_fd(SmpSerialFrameContext *ctx)
             if (rbytes == SMP_ERROR_WOULD_BLOCK)
                 return 0;
 
-            return rbytes;
+            return (int) rbytes;
         } else if (rbytes == 0) {
             return 0;
         }
