@@ -16,13 +16,16 @@
  */
 
 #include <CUnit/CUnit.h>
+#include <CUnit/Automated.h>
 #include <CUnit/Basic.h>
+#include <stdlib.h>
 #include "tests.h"
 
 int main(int argc, char *argv[])
 {
     CU_ErrorCode ret;
     int fail = 0;
+    char *env_automated;
 
     ret = CU_initialize_registry();
     if (ret != CUE_SUCCESS)
@@ -44,8 +47,15 @@ int main(int argc, char *argv[])
     if (ret != CUE_SUCCESS)
         return ret;
 
-    /* Run tests using Basic interface */
-    CU_basic_run_tests();
+    env_automated = getenv("SMP_TEST_AUTOMATED");
+    if (env_automated == NULL) {
+        /* Run tests using Basic interface */
+        CU_basic_run_tests();
+    } else {
+        CU_set_output_filename("test-all");
+        CU_list_tests_to_file();
+        CU_automated_run_tests();
+    }
 
     fail = CU_get_number_of_tests_failed();
 
