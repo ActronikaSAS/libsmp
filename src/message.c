@@ -32,6 +32,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #define MSG_HEADER_SIZE 8
 
@@ -329,7 +330,7 @@ static ssize_t smp_message_encode_value(const SmpValue *value, uint8_t *buffer)
                 }
 
                 /* size | data | nul byte */
-                smp_write_uint16(buffer, len + 1);
+                smp_write_uint16(buffer, (uint16_t)(len + 1));
                 memcpy(buffer + 2, value->value.cstring, len);
                 buffer[2 + len] = '\0';
                 break;
@@ -339,7 +340,7 @@ static ssize_t smp_message_encode_value(const SmpValue *value, uint8_t *buffer)
                     return 0;
 
                 /* size | data */
-                smp_write_uint16(buffer, value->value.craw_size);
+                smp_write_uint16(buffer, (uint16_t) value->value.craw_size);
                 memcpy(buffer + 2, value->value.craw, value->value.craw_size);
                 break;
             }
@@ -393,12 +394,12 @@ int smp_message_build_from_buffer(SmpMessage *msg, const uint8_t *buffer,
 
     offset = MSG_HEADER_SIZE;
     for (i = 0; size - offset > 0 && i < msg->capacity; i++) {
-        int ret;
+        ssize_t ret;
 
         ret = smp_message_decode_value(&msg->pvalues[i], buffer + offset,
                 size - offset);
         if (ret < 0)
-            return ret;
+            return (int) ret;
 
         offset += ret;
     }
@@ -606,8 +607,11 @@ ssize_t smp_message_encode(SmpMessage *msg, uint8_t *buffer, size_t size)
         offset += smp_message_encode_value(val, buffer + offset);
     }
 
+    if (offset - MSG_HEADER_SIZE > UINT32_MAX)
+        return SMP_ERROR_OVERFLOW;
+
     /* message size is current buffer offset - header size */
-    smp_write_uint32(buffer + 4, offset - MSG_HEADER_SIZE);
+    smp_write_uint32(buffer + 4, (uint32_t) (offset - MSG_HEADER_SIZE));
 
     return offset;
 }
@@ -665,7 +669,10 @@ int smp_message_n_args(SmpMessage *msg)
             break;
     }
 
-    return i;
+    if (i > INT_MAX)
+        return SMP_ERROR_OVERFLOW;
+
+    return (int) i;
 }
 
 /**
