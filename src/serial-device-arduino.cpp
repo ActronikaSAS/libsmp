@@ -89,7 +89,9 @@ static DeviceMap devmap[] = {
     { "serial3", &serial3_compat },
     { "serialUSB", &serial_usb_compat },
 };
-#elif defined(CORE_TEENSY) && defined(__MK66FX1M0__)    /* Teensy 3.6 */
+
+/* Teensy 3.5 & 3.6 */
+#elif defined(CORE_TEENSY) && (defined(__MK66FX1M0__) || defined(__MK64FX512__))
 /* Serial lacks begin(baudrate, mode) so define it ourself */
 class TeensyUSBSerial : public usb_serial_class
 {
