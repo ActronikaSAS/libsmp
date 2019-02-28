@@ -643,6 +643,7 @@ static void test_smp_message_encode(void)
     const uint8_t rawdata[] = { 0x56, 0xff, 0x42, 0xa5, 0xbd, 0x16, 0x0f, 0x99,
         0x8c, 0x65, 0xa4, 0x88, 0x72 };
     size_t rawdata_len = SMP_N_ELEMENTS(rawdata);
+    uint32_t *msgid;
     size_t i;
 
     msg = smp_message_new();
@@ -672,7 +673,10 @@ static void test_smp_message_encode(void)
     ret = smp_message_encode(msg, buffer, sizeof(buffer));
     CU_ASSERT_EQUAL(ret, 46 + 4 + strlen(str) + (3 + rawdata_len) + 5 + 9);
 
-    CU_ASSERT_EQUAL(*((uint32_t *)buffer), 42);
+    /* to avoid strict aliasing */
+    msgid = (uint32_t *)buffer;
+
+    CU_ASSERT_EQUAL(*msgid, 42);
     CU_ASSERT_EQUAL(*((uint32_t *)(buffer + 4)), 38 + 4 + strlen(str)
             + (3 + rawdata_len) + 5 + 9);
     CU_ASSERT_EQUAL(*(buffer + 8), SMP_TYPE_UINT8);
