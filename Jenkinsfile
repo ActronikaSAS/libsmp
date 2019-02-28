@@ -40,13 +40,6 @@ pipeline {
                         sh 'meson build; ninja -C build/'
                         stash name: 'lib', includes: 'build/**'
                     }
-                    post {
-                        always {
-                            recordIssues enabledForFailure: true,
-                                qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]],
-                                tool: gcc4()
-                        }
-                    }
                 }
                 stage('Windows build') {
                     agent {
@@ -61,13 +54,6 @@ pipeline {
                             meson build
                             ninja -C build/
                         """
-                    }
-                    post {
-                        always {
-                            recordIssues enabledForFailure: true,
-                                qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]],
-                                tool: msBuild()
-                        }
                     }
                 }
                 stage('Bare AVR build') {
@@ -110,6 +96,15 @@ pipeline {
         }
     }
     post {
+        always {
+            node('master') {
+                recordIssues enabledForFailure: true,
+                    qualityGates: [[threshold: 1, type: 'TOTAL', unstable: true]],
+                    tools: [gcc4(), msBuild()],
+                    filters: [excludeMessage('.*Baud rate achieved is higher than allowed.*')]
+            }
+        }
+
         unstable {
             emailext to: '$DEFAULT_RECIPIENTS',
                 recipientProviders: [culprits()],
