@@ -70,6 +70,20 @@ pipeline {
                         }
                     }
                 }
+                stage('Bare AVR build') {
+                    agent {
+                        label 'linux'
+                    }
+                    steps {
+                        echo 'Building..'
+                        echo "make[1]: Entering directory `build-avr'"
+                        sh '''
+                            meson build-avr --cross-file extras/linux-avr-atmega2560-cross.txt \
+                                -Db_staticpic=false -Ddefault_library=static
+                            ninja -C build-avr
+                        '''
+                    }
+                }
             }
 
         }
