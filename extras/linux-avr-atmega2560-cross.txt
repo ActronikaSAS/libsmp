@@ -1,0 +1,34 @@
+[binaries]
+c = '/usr/bin/avr-gcc'
+cpp = '/usr/bin/avr-g++'
+ar = '/usr/bin/avr-ar'
+strip = '/usr/bin/avr-strip'
+
+[host_machine]
+system = 'bare'
+cpu_family = 'atmega'
+cpu = 'atmega2560'
+endian = 'none'
+
+[properties]
+c_args = [
+    '-ffunction-sections',
+    '-fdata-sections',
+    '-mmcu=atmega2560',
+    '-DF_CPU=16000000L',
+    ]
+
+cpp_args = [
+    '-ffunction-sections',
+    '-fdata-sections',
+    '-mmcu=atmega2560',
+    '-DF_CPU=16000000L',
+    '-Wno-non-virtual-dtor'
+    ]
+
+c_link_args = [
+    '-mmcu=atmega2560',
+    ]
+cpp_link_args = [
+    '-mmcu=atmega2560',
+    ]
