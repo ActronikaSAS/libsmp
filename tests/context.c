@@ -110,17 +110,17 @@ static void test_smp_context_send_message(void)
 {
     TestCtx tctx;
     SmpContext *ctx;
-    SmpMessage msg;
+    SmpMessage *msg;
     int ret;
 
     test_setup(&tctx);
     ctx = smp_context_new(&simple_cbs, NULL);
     CU_ASSERT_PTR_NOT_NULL_FATAL(ctx);
 
-    smp_message_init(&msg, 1);
+    msg = smp_message_new_with_id(1);
 
     /* sending a message when the context is not opened should fail */
-    CU_ASSERT_EQUAL(smp_context_send_message(ctx, &msg), SMP_ERROR_BAD_FD);
+    CU_ASSERT_EQUAL(smp_context_send_message(ctx, msg), SMP_ERROR_BAD_FD);
 
     ret = smp_context_open(ctx, FIFO_PATH);
     CU_ASSERT_EQUAL_FATAL(ret, 0);
@@ -130,12 +130,13 @@ static void test_smp_context_send_message(void)
             SMP_ERROR_INVALID_PARAM);
     CU_ASSERT_EQUAL(smp_context_send_message(ctx, NULL),
             SMP_ERROR_INVALID_PARAM);
-    CU_ASSERT_EQUAL(smp_context_send_message(NULL, &msg),
+    CU_ASSERT_EQUAL(smp_context_send_message(NULL, msg),
             SMP_ERROR_INVALID_PARAM);
 
     /* should be ok */
-    CU_ASSERT_EQUAL(smp_context_send_message(ctx, &msg), 0);
+    CU_ASSERT_EQUAL(smp_context_send_message(ctx, msg), 0);
 
+    smp_message_free(msg);
     smp_context_close(ctx);
     smp_context_free(ctx);
     test_teardown(&tctx);
@@ -164,7 +165,7 @@ static void on_new_message(SmpContext *ctx, SmpMessage *msg,
         case VALID_PAYLOAD: {
             uint32_t val;
 
-            CU_ASSERT_EQUAL(msg->msgid, 1);
+            CU_ASSERT_EQUAL(smp_message_get_msgid(msg), 1);
             ret = smp_message_get_uint32(msg, 0, &val);
             CU_ASSERT_EQUAL(ret, 0);
             CU_ASSERT_EQUAL(val, 0xabcdef42);
@@ -201,7 +202,7 @@ static void test_smp_context_receive_valid_message(void)
 {
     TestCtx tctx;
     SmpContext *ctx;
-    SmpMessage msg;
+    SmpMessage *msg;
     int ret;
 
     test_setup(&tctx);
@@ -211,9 +212,9 @@ static void test_smp_context_receive_valid_message(void)
     CU_ASSERT_EQUAL_FATAL(smp_context_open(ctx, FIFO_PATH), 0);
 
     test_smp_context_receive_message_case = VALID_PAYLOAD;
-    smp_message_init(&msg, 1);
-    smp_message_set_uint32(&msg, 0, 0xabcdef42);
-    ret = smp_context_send_message(ctx, &msg);
+    msg = smp_message_new_with_id(1);
+    smp_message_set_uint32(msg, 0, 0xabcdef42);
+    ret = smp_context_send_message(ctx, msg);
     CU_ASSERT_EQUAL_FATAL(ret, 0);
 
     test_smp_context_on_message_called = false;
@@ -223,6 +224,7 @@ static void test_smp_context_receive_valid_message(void)
     CU_ASSERT_TRUE(test_smp_context_on_message_called);
     CU_ASSERT_FALSE(test_smp_context_on_error_called);
 
+    smp_message_free(msg);
     smp_context_close(ctx);
     smp_context_free(ctx);
     test_teardown(&tctx);
@@ -275,7 +277,7 @@ static void test_smp_context_static_api(void)
     uint8_t rx_serial_buffer[32];
     uint8_t msg_buffer[16];
     SmpMessage *msg_rx;
-    SmpMessage msg;
+    SmpMessage *msg;
 
     test_setup(&tctx);
 
@@ -342,8 +344,8 @@ static void test_smp_context_static_api(void)
     /* sending a basic message should work */
     CU_ASSERT_EQUAL_FATAL(smp_context_open(ctx, FIFO_PATH), 0);
 
-    smp_message_init(&msg, 1);
-    CU_ASSERT_EQUAL(smp_context_send_message(ctx, &msg), 0);
+    msg = smp_message_new_with_id(1);
+    CU_ASSERT_EQUAL(smp_context_send_message(ctx, msg), 0);
 
     test_smp_context_receive_message_case = STATIC_API_OK;
     test_smp_context_on_message_called = false;
@@ -358,7 +360,7 @@ static void test_smp_context_static_api(void)
     CU_ASSERT_PTR_NOT_NULL_FATAL(msg_tx);
 
     /* sending a message which exceed the message buffer should fail */
-    CU_ASSERT_EQUAL(smp_context_send_message(ctx, &msg), SMP_ERROR_OVERFLOW);
+    CU_ASSERT_EQUAL(smp_context_send_message(ctx, msg), SMP_ERROR_OVERFLOW);
 
     /* reset msg_tx to a normal size and reduce serial_tx to cause an error */
     msg_tx = smp_buffer_new_from_static(&smsg_tx, sizeof(smsg_tx), msg_buffer,
@@ -369,7 +371,7 @@ static void test_smp_context_static_api(void)
             tx_serial_buffer, 8, NULL);
     CU_ASSERT_PTR_NOT_NULL_FATAL(serial_tx);
 
-    CU_ASSERT_EQUAL(smp_context_send_message(ctx, &msg), SMP_ERROR_OVERFLOW);
+    CU_ASSERT_EQUAL(smp_context_send_message(ctx, msg), SMP_ERROR_OVERFLOW);
 
     /* reset serial_tx buffer and reduce serial_rx to cause a too big error */
     serial_tx = smp_buffer_new_from_static(&sserial_tx, sizeof(sserial_tx),
@@ -379,7 +381,7 @@ static void test_smp_context_static_api(void)
             sizeof(sdecoder), rx_serial_buffer, 8);
     CU_ASSERT_PTR_NOT_NULL_FATAL(decoder);
 
-    CU_ASSERT_EQUAL(smp_context_send_message(ctx, &msg), 0);
+    CU_ASSERT_EQUAL(smp_context_send_message(ctx, msg), 0);
 
     test_smp_context_receive_message_case = STATIC_API_TOO_BIG;
     test_smp_context_on_message_called = false;
@@ -388,6 +390,7 @@ static void test_smp_context_static_api(void)
     CU_ASSERT_FALSE(test_smp_context_on_message_called);
     CU_ASSERT_TRUE(test_smp_context_on_error_called);
 
+    smp_message_free(msg);
     smp_context_close(ctx);
 
     test_teardown(&tctx);
