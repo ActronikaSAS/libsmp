@@ -271,7 +271,7 @@ static void set_baudrate_115200(UARTDevice *device)
 #endif
 }
 
-static void set_baudrate(UARTDevice *device, SmpSerialFrameBaudrate baudrate)
+static void set_baudrate(UARTDevice *device, SmpSerialBaudrate baudrate)
 {
     switch (baudrate) {
         case SMP_SERIAL_BAUDRATE_1200:
@@ -313,7 +313,7 @@ static int init_uart_device(UARTDevice *device)
     }
 
     /* configure baudrate */
-    set_baudrate(device, SMP_SERIAL_FRAME_BAUDRATE_115200);
+    set_baudrate(device, SMP_SERIAL_BAUDRATE_115200);
 
     /* configure data width to 8 */
     *regs->csr_c |= _BV(UCSZ00);
