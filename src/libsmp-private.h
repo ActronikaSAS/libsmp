@@ -25,6 +25,8 @@
 #include <sys/types.h>
 #endif
 
+#include "libsmp.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -56,6 +58,18 @@ typedef signed __int64 ssize_t;
 #define SMP_CONCAT(a, b) SMP_DO_CONCAT(a,b)
 #define SMP_STATIC_ASSERT(cond) \
     typedef char SMP_CONCAT(static_assertion, __LINE__)[cond ? 1 : -1];
+
+struct SmpMessage
+{
+    /** The message id */
+    uint32_t msgid;
+
+    SmpValue values[SMP_MESSAGE_MAX_VALUES];
+    SmpValue *pvalues;
+    size_t capacity;
+
+    bool statically_allocated;
+};
 
 int smp_message_build_from_buffer(SmpMessage *msg, const uint8_t *buffer,
         size_t size);

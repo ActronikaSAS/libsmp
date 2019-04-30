@@ -111,7 +111,7 @@ static_obj_list = [
     ['SmpBuffer', '"buffer.h"', 'smp-buffer-size'],
     ['SmpContext', '"context.h"', 'smp-context-size'],
     ['SmpSerialProtocolDecoder', '"serial-protocol.h"', 'smp-serial-protocol-decoder-size'],
-    ['SmpMessage', '"libsmp.h"', 'smp-message-size'],
+    ['SmpMessage', '"libsmp-private.h"', 'smp-message-size'],
     ]
 
 cdata = configuration_data()

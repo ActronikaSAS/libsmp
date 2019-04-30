@@ -19,6 +19,7 @@
 
 #define SMP_ENABLE_STATIC_API
 #include <libsmp.h>
+#include "libsmp-private.h"
 #include "tests.h"
 
 /* use static variable to be sure while comparing */
