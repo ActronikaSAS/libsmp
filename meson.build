@@ -42,7 +42,6 @@ libsmp_src = [
     'src/context.c',
     'src/libsmp.c',
     'src/message.c',
-    'src/serial_frame.c',
     'src/serial-protocol.c',
     ]
 
@@ -100,9 +99,6 @@ cdata = configuration_data()
 
 cdata.set('SMP_MESSAGE_MAX_VALUES', get_option('message-max-values').to_int(),
     description : 'The maximum numbers of arguments in a message')
-cdata.set('SMP_SERIAL_FRAME_MAX_FRAME_SIZE',
-    get_option('serial-frame-max-size').to_int(),
-    description : 'The maximum frame size in bytes')
 
 configure_file(output : 'libsmp-config.h',
     configuration : cdata,

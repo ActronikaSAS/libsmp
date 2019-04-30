@@ -32,8 +32,6 @@ CONFIGURATION_PARAMETERS = {
     "libsmp-config.h": [
         ("SMP_MESSAGE_MAX_VALUES", 8,
             "The maximum number of arguments in a message"),
-        ("SMP_SERIAL_FRAME_MAX_FRAME_SIZE", 128,
-            "The maximum frame size in bytes")
     ]
 }
 

@@ -27,7 +27,6 @@
 #endif
 
 CU_ErrorCode context_test_register(void);
-CU_ErrorCode serial_frame_test_register(void);
 CU_ErrorCode serial_protocol_test_register(void);
 CU_ErrorCode message_test_register(void);
 
