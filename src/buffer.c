@@ -19,7 +19,10 @@
  * \defgroup buffer Buffer
  */
 
+#ifndef SMP_ENABLE_STATIC_API
 #define SMP_ENABLE_STATIC_API
+#endif
+
 #include "buffer.h"
 #include "libsmp-private.h"
 
