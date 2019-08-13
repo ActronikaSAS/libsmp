@@ -1,6 +1,6 @@
 project('smp', 'c', 'cpp',
     version : '0.7.90.1',
-    meson_version : '>= 0.43.0',
+    meson_version : '>= 0.46.0',
     default_options : [
       'buildtype=debugoptimized',
       'warning_level=2'
@@ -199,12 +199,11 @@ libsmp_dep = declare_dependency(link_with : libsmp,
 
 install_headers(['include/libsmp.h'])
 
-pkgconfig.generate(
+pkgconfig.generate(libsmp,
     name: 'smp',
     description: 'Simple Message Protocol library',
     version: meson.project_version(),
     filebase: 'libsmp',
-    libraries: libsmp,
     url: 'https://github.com/ActronikaSAS/libsmp'
     )
 
