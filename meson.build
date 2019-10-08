@@ -120,7 +120,10 @@ foreach obj : static_obj_list
       '-DSMP_DISABLE_LEGACY_API',
       # builddir (which contains libsmp-config.h) is not included when checking
       # sizeof so:
-      '-I' + meson.current_build_dir()
+      '-I' + meson.current_build_dir(),
+      # add an unused defined with the number of message so that part is
+      # re-check when the option change
+      '-DSMP_DUMMY_BUILD_MESSAGE=' + get_option('message-max-values'),
       ]
 
   incdir = [
