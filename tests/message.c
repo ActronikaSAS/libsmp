@@ -426,13 +426,13 @@ static void test_smp_message_set(void)
     CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
 
     /* out of bound index should return in error */
-    smp_message_init(msg, 33);
+    smp_message_set_id(msg, 33);
     ret = smp_message_set(msg,
             SMP_MESSAGE_MAX_VALUES + 10, SMP_TYPE_UINT8, 3, -1);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
     smp_message_clear(msg);
 
-    smp_message_init(msg, 33);
+    smp_message_set_id(msg, 33);
     ret = smp_message_set(msg,
             0, SMP_TYPE_UINT8, (uint8_t) 5,
             SMP_MESSAGE_MAX_VALUES + 10, SMP_TYPE_UINT8, 3,
@@ -440,7 +440,7 @@ static void test_smp_message_set(void)
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
     smp_message_clear(msg);
 
-    smp_message_init(msg, 33);
+    smp_message_set_id(msg, 33);
     ret = smp_message_set(msg,
             0, SMP_TYPE_UINT8, 5,
             SMP_MESSAGE_MAX_VALUES + 10, SMP_TYPE_UINT8, 3, -1);
@@ -448,7 +448,7 @@ static void test_smp_message_set(void)
     smp_message_clear(msg);
 
     /* Test some simple unique value */
-    smp_message_init(msg, 33);
+    smp_message_set_id(msg, 33);
     ret = smp_message_set(msg,
             0, SMP_TYPE_UINT8, 33, -1);
     CU_ASSERT_EQUAL(ret, 0);
@@ -456,7 +456,7 @@ static void test_smp_message_set(void)
     CU_ASSERT_EQUAL(msg->values[0].value.u8, 33);
     smp_message_clear(msg);
 
-    smp_message_init(msg, 33);
+    smp_message_set_id(msg, 33);
     ret = smp_message_set(msg,
             2, SMP_TYPE_INT32, (int32_t) 334222, -1);
     CU_ASSERT_EQUAL(ret, 0);
@@ -465,7 +465,7 @@ static void test_smp_message_set(void)
     smp_message_clear(msg);
 
     /* test a more complex use case */
-    smp_message_init(msg, 33);
+    smp_message_set_id(msg, 33);
     ret = smp_message_set(msg,
             0, SMP_TYPE_UINT8, 33,
             1, SMP_TYPE_INT8, -4,
@@ -522,20 +522,20 @@ static void test_smp_message_set_value(void)
     CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
 
     /* out of bound index should return in error */
-    smp_message_init(msg, 33);
+    smp_message_set_id(msg, 33);
     ret = smp_message_set_value(msg, SMP_MESSAGE_MAX_VALUES + 10, &value1);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
     smp_message_clear(msg);
 
     /* should pass */
-    smp_message_init(msg, 33);
+    smp_message_set_id(msg, 33);
     ret = smp_message_set_value(msg, 0, &value1);
     CU_ASSERT_EQUAL(ret, 0);
     CU_ASSERT_EQUAL(msg->values[0].type, value1.type);
     CU_ASSERT_EQUAL(msg->values[0].value.u8, value1.value.u8);
     smp_message_clear(msg);
 
-    smp_message_init(msg, 33);
+    smp_message_set_id(msg, 33);
     ret = smp_message_set_value(msg, 4, &value2);
     CU_ASSERT_EQUAL(ret, 0);
     CU_ASSERT_EQUAL(msg->values[4].type, value2.type);
@@ -555,14 +555,14 @@ static void test_smp_message_set_##type_name(void) \
     CU_ASSERT_PTR_NOT_NULL_FATAL(msg); \
 \
     /* out of bound index should fail */ \
-    smp_message_init(msg, 33);\
+    smp_message_set_id(msg, 33);                                        \
     ret = smp_message_set_##type_name(msg, SMP_MESSAGE_MAX_VALUES + 10,\
             (svalue)); \
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND); \
     smp_message_clear(msg); \
 \
     /* good */ \
-    smp_message_init(msg, 33); \
+    smp_message_set_id(msg, 33); \
     ret = smp_message_set_##type_name(msg, 0, (svalue)); \
     CU_ASSERT_EQUAL(ret, 0); \
     CU_ASSERT_EQUAL(msg->values[0].type, SMP_TYPE); \
@@ -592,13 +592,13 @@ static void test_smp_message_set_cstring(void)
     CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
 
     /* out of bound index should fail */
-    smp_message_init(msg, 33);
+    smp_message_set_id(msg, 33);
     ret = smp_message_set_cstring(msg, SMP_MESSAGE_MAX_VALUES + 10, "foo");
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
     smp_message_clear(msg);
 
     /* good */
-    smp_message_init(msg, 33);
+    smp_message_set_id(msg, 33);
     ret = smp_message_set_cstring(msg, 0, "foobar");
     CU_ASSERT_EQUAL(ret, 0);
     CU_ASSERT_EQUAL(msg->values[0].type, SMP_TYPE_STRING);
@@ -617,14 +617,14 @@ static void test_smp_message_set_craw(void)
     CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
 
     /* out of bound index should fail */
-    smp_message_init(msg, 33);
+    smp_message_set_id(msg, 33);
     ret = smp_message_set_craw(msg, SMP_MESSAGE_MAX_VALUES + 10,
             (uint8_t *) "foo", 4);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
     smp_message_clear(msg);
 
     /* good */
-    smp_message_init(msg, 33);
+    smp_message_set_id(msg, 33);
     ret = smp_message_set_craw(msg, 0, (uint8_t *) "foobar", 7);
     CU_ASSERT_EQUAL(ret, 0);
     CU_ASSERT_EQUAL(msg->values[0].type, SMP_TYPE_RAW);
@@ -650,7 +650,7 @@ static void test_smp_message_encode(void)
     msg = smp_message_new();
     CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
 
-    smp_message_init(msg, 42);
+    smp_message_set_id(msg, 42);
     smp_message_set(msg,
             0, SMP_TYPE_UINT8, 33,
             1, SMP_TYPE_INT8, -4,
@@ -731,7 +731,7 @@ union pval
     uint8_t bytes[8];
 };
 
-static void test_smp_message_init_from_buffer(void)
+static void test_smp_message_build_from_buffer(void)
 {
     SmpMessage *msg;
     union pval u64, i64, f32, f64;
@@ -779,15 +779,15 @@ static void test_smp_message_init_from_buffer(void)
     CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
 
     /* a too small buffer should return in error */
-    ret = smp_message_init_from_buffer(msg, buffer, 4);
+    ret = smp_message_build_from_buffer(msg, buffer, 4);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_BAD_MESSAGE);
     smp_message_clear(msg);
 
     /* a too small buffer should return in error */
-    ret = smp_message_init_from_buffer(msg, buffer, 10);
+    ret = smp_message_build_from_buffer(msg, buffer, 10);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_BAD_MESSAGE);
     /* check a valid payload */
-    ret = smp_message_init_from_buffer(msg, buffer, sizeof(buffer));
+    ret = smp_message_build_from_buffer(msg, buffer, sizeof(buffer));
     CU_ASSERT_EQUAL(ret, 0);
 
     CU_ASSERT_EQUAL(msg->msgid, 0x02243303);
@@ -825,7 +825,7 @@ static void test_smp_message_init_from_buffer(void)
 
     /* a corrupted size in buffer should cause an error */
     buffer[4] = 0xff;
-    ret = smp_message_init_from_buffer(msg, buffer, sizeof(buffer));
+    ret = smp_message_build_from_buffer(msg, buffer, sizeof(buffer));
     CU_ASSERT_EQUAL(ret, SMP_ERROR_BAD_MESSAGE);
 
     /* a buffer with too many values should fail with the right error */
@@ -843,7 +843,7 @@ static void test_smp_message_init_from_buffer(void)
             buffer2[8 + 2 * i + 1] = 0x42;
         }
 
-        ret = smp_message_init_from_buffer(msg, buffer2, sizeof(buffer2));
+        ret = smp_message_build_from_buffer(msg, buffer2, sizeof(buffer2));
         CU_ASSERT_EQUAL(ret, SMP_ERROR_TOO_BIG);
         smp_message_clear(msg);
     }
@@ -858,7 +858,7 @@ static void test_smp_message_init_from_buffer(void)
             0x09, 0x44, 0x00, 'h', 'e', 'l', 'l', 'o', '\0',
         };
 
-        ret = smp_message_init_from_buffer(msg, buffer2, sizeof(buffer2));
+        ret = smp_message_build_from_buffer(msg, buffer2, sizeof(buffer2));
         CU_ASSERT_EQUAL(ret, SMP_ERROR_BAD_MESSAGE);
     }
 
@@ -872,7 +872,7 @@ static void test_smp_message_init_from_buffer(void)
             0x09, 0x06, 0x00, 'h', 'e', 'l', 'l', 'o', 0x45,
         };
 
-        ret = smp_message_init_from_buffer(msg, buffer2, sizeof(buffer2));
+        ret = smp_message_build_from_buffer(msg, buffer2, sizeof(buffer2));
         CU_ASSERT_EQUAL(ret, SMP_ERROR_BAD_MESSAGE);
     }
 
@@ -929,7 +929,7 @@ static Test tests[] = {
     DEFINE_TEST(test_smp_message_set_cstring),
     DEFINE_TEST(test_smp_message_set_craw),
     DEFINE_TEST(test_smp_message_encode),
-    DEFINE_TEST(test_smp_message_init_from_buffer),
+    DEFINE_TEST(test_smp_message_build_from_buffer),
     DEFINE_TEST(test_smp_message_static_helper_macro),
     { NULL, NULL }
 };
