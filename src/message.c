@@ -426,7 +426,7 @@ int smp_message_build_from_buffer(SmpMessage *msg, const uint8_t *buffer,
             new_capacity = next_pow2(smp_message_get_capacity(msg) + 1);
             ret = smp_message_set_capacity(msg, new_capacity);
             if (ret < 0)
-                return ret;
+                return (int) ret;
         }
 
         ret = smp_message_decode_value(&msg->values[i], buffer + offset,
