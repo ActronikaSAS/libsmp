@@ -80,10 +80,12 @@ static void test_smp_serial_protocol_encode_simple(void)
     CU_ASSERT_PTR_EQUAL(outbuf, soutbuf);
     test_smp_serial_protocol_encode_simple_check_buffer(outbuf, ret);
 
+    /* test with auto allocated output buffer */
     outbuf = NULL;
     ret = smp_serial_protocol_encode((const uint8_t *)str, len, &outbuf, 0);
     CU_ASSERT_PTR_NOT_NULL_FATAL(outbuf);
     test_smp_serial_protocol_encode_simple_check_buffer(outbuf, ret);
+    free(outbuf);
 }
 
 static void test_smp_serial_protocol_encode_magic_bytes(void)
@@ -120,6 +122,7 @@ static void test_smp_serial_protocol_encode_magic_bytes(void)
             break;
         }
     }
+    free(outbuf);
 }
 
 static void test_smp_serial_protocol_encode_magic_crc(void)
@@ -162,15 +165,19 @@ static void test_smp_serial_protocol_encode_magic_crc(void)
                 &outbuf, 0);
         CU_ASSERT_EQUAL(ret, sizeof(expected_frame[i]));
         CU_ASSERT_PTR_NOT_NULL_FATAL(outbuf);
-        if (ret != sizeof(expected_frame[i]))
+        if (ret != sizeof(expected_frame[i])) {
+            free(outbuf);
             continue;
+        }
 
         for (j = 0; j < ret; j++) {
             if (outbuf[j] != expected_frame[i][j]) {
                 CU_FAIL("frame mismatch");
+                free(outbuf);
                 break;
             }
         }
+        free(outbuf);
     }
 }
 
@@ -399,6 +406,7 @@ static void test_smp_serial_protocol_decoder_too_big(void)
     CU_ASSERT_EQUAL(ret, SMP_ERROR_TOO_BIG);
     CU_ASSERT_PTR_NULL(ctx->frame);
 
+    ctx->decoder->statically_allocated = false;
     test_decoder_free(ctx);
 }
 
@@ -417,6 +425,7 @@ static void test_smp_serial_protocol_decoder_too_big_esc(void)
     CU_ASSERT_EQUAL(ret, SMP_ERROR_TOO_BIG);
     CU_ASSERT_PTR_NULL(ctx->frame);
 
+    ctx->decoder->statically_allocated = false;
     test_decoder_free(ctx);
 }
 
@@ -538,6 +547,8 @@ static void test_smp_serial_protocol_decoder_resize_decoder_limit(void)
 
     ret = test_decoder_process_payload(ctx);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_TOO_BIG);
+
+    test_decoder_free(ctx);
 }
 
 typedef struct
