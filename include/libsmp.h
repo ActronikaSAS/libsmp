@@ -29,8 +29,6 @@
 #include <sys/types.h>
 #endif
 
-#include <libsmp-config.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -190,10 +188,10 @@ SMP_API SmpMessage *smp_message_new(void);
 SMP_API SmpMessage *smp_message_new_with_id(uint32_t id);
 SMP_API void smp_message_free(SmpMessage *msg);
 
-SMP_API void smp_message_init(SmpMessage *msg, uint32_t msgid);
-SMP_API int smp_message_init_from_buffer(SmpMessage *msg, const uint8_t *buffer,
-                size_t size);
 SMP_API void smp_message_clear(SmpMessage *msg);
+
+SMP_API size_t smp_message_get_capacity(SmpMessage *msg);
+SMP_API int smp_message_set_capacity(SmpMessage *msg, size_t capacity);
 
 SMP_API ssize_t smp_message_encode(SmpMessage *msg, uint8_t *buffer, size_t size);
 SMP_API size_t smp_message_get_encoded_size(SmpMessage *msg);

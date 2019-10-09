@@ -29,10 +29,6 @@ EXCLUDED_FILES = [
 
 CONFIGURATION_PARAMETERS = {
     "config.h": [],
-    "libsmp-config.h": [
-        ("SMP_MESSAGE_MAX_VALUES", 8,
-            "The maximum number of arguments in a message"),
-    ]
 }
 
 LIBSMP_STATIC_FILENAME = 'libsmp-static.h'

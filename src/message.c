@@ -36,6 +36,8 @@
 
 #define MSG_HEADER_SIZE 8
 
+#define DEFAULT_CAPACITY 8
+
 SMP_STATIC_ASSERT(sizeof(SmpMessage) == sizeof(SmpStaticMessage));
 
 #ifdef HAVE_UNALIGNED_ACCESS
@@ -364,11 +366,27 @@ static size_t smp_message_compute_max_encoded_size(SmpMessage *msg)
     size_t i;
 
     for (i = 0; i < msg->capacity; i++) {
-        if (msg->pvalues[i].type != SMP_TYPE_NONE)
-            ret += (1 + smp_value_compute_size(&msg->pvalues[i]));
+        if (msg->values[i].type != SMP_TYPE_NONE)
+            ret += (1 + smp_value_compute_size(&msg->values[i]));
     }
 
     return ret;
+}
+
+static size_t next_pow2(size_t v)
+{
+    v--;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+#if SMP_SIZE_T_SIZE > 4
+    v |= v >> 32;
+#endif
+    v++;
+
+    return v;
 }
 
 /* Internal API */
@@ -393,10 +411,23 @@ int smp_message_build_from_buffer(SmpMessage *msg, const uint8_t *buffer,
         return SMP_ERROR_BAD_MESSAGE;
 
     offset = MSG_HEADER_SIZE;
-    for (i = 0; size - offset > 0 && i < msg->capacity; i++) {
+    for (i = 0; size - offset > 0; i++) {
         ssize_t ret;
 
-        ret = smp_message_decode_value(&msg->pvalues[i], buffer + offset,
+        if (i >= msg->capacity) {
+            size_t new_capacity;
+
+            if (msg->statically_allocated)
+                break;
+
+            /* increase our capacity */
+            new_capacity = next_pow2(smp_message_get_capacity(msg) + 1);
+            ret = smp_message_set_capacity(msg, new_capacity);
+            if (ret < 0)
+                return ret;
+        }
+
+        ret = smp_message_decode_value(&msg->values[i], buffer + offset,
                 size - offset);
         if (ret < 0)
             return (int) ret;
@@ -441,7 +472,14 @@ SmpMessage *smp_message_new_with_id(uint32_t id)
     if (msg == NULL)
         return NULL;
 
-    smp_message_init(msg, id);
+    msg->msgid = id;
+    msg->capacity = DEFAULT_CAPACITY;
+    msg->values = calloc(msg->capacity, sizeof(*msg->values));
+    if (msg->values == NULL) {
+        free(msg);
+        return NULL;
+    }
+
     msg->statically_allocated = false;
 
     return msg;
@@ -491,11 +529,13 @@ SmpMessage *smp_message_new_from_static_with_id(SmpStaticMessage *smsg,
     return_val_if_fail(values != NULL, NULL);
     return_val_if_fail(capacity > 0, NULL);
 
-    smp_message_init(msg, id);
-    msg->pvalues = values;
+    memset(msg, 0, sizeof(*msg));
+
+    msg->msgid = id;
+    msg->values = values;
     msg->capacity = capacity;
 
-    memset(msg->pvalues, 0, capacity * sizeof(SmpValue));
+    memset(msg->values, 0, capacity * sizeof(SmpValue));
     msg->statically_allocated = true;
 
     return msg;
@@ -514,49 +554,8 @@ void smp_message_free(SmpMessage *msg)
     if (msg->statically_allocated)
         return;
 
+    free(msg->values);
     free(msg);
-}
-
-/**
- * \ingroup message
- * Initialze a SmpMessage
- *
- * @param[in] msg a SmpMessage
- * @param[in] msgid the ID of the message
- */
-void smp_message_init(SmpMessage *msg, uint32_t msgid)
-{
-    return_if_fail(msg != NULL);
-
-    memset(msg, 0, sizeof(*msg));
-
-    msg->msgid = msgid;
-    msg->pvalues = msg->values;
-    msg->capacity = SMP_MESSAGE_MAX_VALUES;
-}
-
-/**
- * \ingroup message
- * Initialize a SmpMessage from the given buffer. Buffer will be parsed to
- * populate the message.
- * Warning: if message contains strings or raw data, the buffer shall not be
- * overwritten or freed as long as message exist as strings only points to
- * buffer.
- *
- * @param[in] msg a SmpMessage
- * @param[in] buffer the buffer to parse
- * @param[in] size of the buffer
- *
- * @return 0 on success, a SmpError otherwise.
- */
-int smp_message_init_from_buffer(SmpMessage *msg, const uint8_t *buffer,
-        size_t size)
-{
-    return_val_if_fail(msg != NULL, SMP_ERROR_INVALID_PARAM);
-    return_val_if_fail(buffer != NULL, SMP_ERROR_INVALID_PARAM);
-
-    smp_message_init(msg, 0);
-    return smp_message_build_from_buffer(msg, buffer, size);
 }
 
 /**
@@ -570,7 +569,64 @@ void smp_message_clear(SmpMessage *msg)
     return_if_fail(msg != NULL);
 
     msg->msgid = 0;
-    memset(msg->pvalues, 0, msg->capacity * sizeof(SmpValue));
+    memset(msg->values, 0, msg->capacity * sizeof(SmpValue));
+}
+
+/**
+ * \ingroup message
+ * Get the capacity of a message, ie the maximum number of value it can hold.
+ *
+ * @param[in] msg a SmpMessage
+ *
+ * @return the capacity of the message.
+ */
+size_t smp_message_get_capacity(SmpMessage *msg)
+{
+    return_val_if_fail(msg != NULL, 0);
+
+    return msg->capacity;
+}
+
+/**
+ * \ingroup message
+ * Set the capacity of a message, ie the maximum number of value it can contains.
+ * This is useful to pre-allocated a message large enough to contains all the
+ * values without allocating during set().
+ *
+ * The capacity should be greater than the current one.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] capacity the new capacity.
+ *
+ * @return 0 on success, a SmpError otherwise.
+ */
+int smp_message_set_capacity(SmpMessage *msg, size_t capacity)
+{
+    SmpValue *values;
+    size_t init_size;
+
+    return_val_if_fail(msg != NULL, SMP_ERROR_INVALID_PARAM);
+
+    if (msg->statically_allocated)
+        return SMP_ERROR_NOT_SUPPORTED;
+
+    if (capacity < msg->capacity)
+        return SMP_ERROR_INVALID_PARAM;
+
+    if (capacity == msg->capacity)
+        return 0;
+
+    /* FIXME: check for overflow */
+    values = realloc(msg->values, capacity * sizeof(*msg->values));
+    if (values == NULL)
+        return SMP_ERROR_NO_MEM;
+
+    /* initialize the new range */
+    init_size = (capacity - msg->capacity) * sizeof(*msg->values);
+    memset(values + msg->capacity, 0, init_size);
+    msg->values = values;
+    msg->capacity = capacity;
+    return 0;
 }
 
 /**
@@ -599,7 +655,7 @@ ssize_t smp_message_encode(SmpMessage *msg, uint8_t *buffer, size_t size)
     offset += MSG_HEADER_SIZE;
 
     for (i = 0; i < msg->capacity; i++) {
-        const SmpValue *val = &msg->pvalues[i];
+        const SmpValue *val = &msg->values[i];
 
         if (val->type == SMP_TYPE_NONE)
             continue;
@@ -665,7 +721,7 @@ int smp_message_n_args(SmpMessage *msg)
     return_val_if_fail(msg != NULL, -1);
 
     for (i = 0; i < msg->capacity; i++) {
-        if (msg->pvalues[i].type == SMP_TYPE_NONE)
+        if (msg->values[i].type == SMP_TYPE_NONE)
             break;
     }
 
@@ -828,10 +884,10 @@ int smp_message_get_value(SmpMessage *msg, int index, SmpValue *value)
     if ((size_t) index >= msg->capacity)
         return SMP_ERROR_NOT_FOUND;
 
-    if (msg->pvalues[index].type == SMP_TYPE_NONE)
+    if (msg->values[index].type == SMP_TYPE_NONE)
         return SMP_ERROR_NOT_FOUND;
 
-    *value = msg->pvalues[index];
+    *value = msg->values[index];
     return 0;
 }
 
@@ -1145,7 +1201,7 @@ int smp_message_set_value(SmpMessage *msg, int index, const SmpValue *value)
     if ((size_t) index >= msg->capacity)
         return SMP_ERROR_NOT_FOUND;
 
-    msg->pvalues[index] = *value;
+    msg->values[index] = *value;
     return 0;
 }
 

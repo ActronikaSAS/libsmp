@@ -64,8 +64,7 @@ struct SmpMessage
     /** The message id */
     uint32_t msgid;
 
-    SmpValue values[SMP_MESSAGE_MAX_VALUES];
-    SmpValue *pvalues;
+    SmpValue *values;
     size_t capacity;
 
     bool statically_allocated;

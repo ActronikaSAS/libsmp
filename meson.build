@@ -74,6 +74,10 @@ if c_compiler.has_function('poll', prefix: '#include <poll.h>')
   cdata.set('HAVE_POLL_H', true)
 endif
 
+# check size_t size
+size = c_compiler.sizeof('size_t')
+cdata.set('SMP_SIZE_T_SIZE', size)
+
 cpu_with_unaligned_access_support = [ 'x86', 'x86_64', 'ppc', 'ppc64', 's390x' ]
 if cpu_with_unaligned_access_support.contains(host_machine.cpu_family())
   cdata.set('HAVE_UNALIGNED_ACCESS', true)
@@ -94,16 +98,6 @@ cdata.set('SMP_SERIAL_DEVICE_AVR_CBUF_SIZE',
 configure_file(output : 'config.h',
     configuration: cdata)
 
-## Public config file
-cdata = configuration_data()
-
-cdata.set('SMP_MESSAGE_MAX_VALUES', get_option('message-max-values').to_int(),
-    description : 'The maximum numbers of arguments in a message')
-
-configure_file(output : 'libsmp-config.h',
-    configuration : cdata,
-    install_dir: get_option('includedir'))
-
 libsmp_config_incdir = include_directories('.')
 
 static_obj_list = [
@@ -121,9 +115,6 @@ foreach obj : static_obj_list
       # builddir (which contains libsmp-config.h) is not included when checking
       # sizeof so:
       '-I' + meson.current_build_dir(),
-      # add an unused defined with the number of message so that part is
-      # re-check when the option change
-      '-DSMP_DUMMY_BUILD_MESSAGE=' + get_option('message-max-values'),
       ]
 
   incdir = [

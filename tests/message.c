@@ -105,12 +105,69 @@ static void test_smp_message_new_from_static_with_id(void)
     CU_ASSERT_EQUAL(smp_message_get_msgid(msg), 42);
 }
 
+static void test_smp_message_get_capacity(void)
+{
+    SmpMessage *msg;
+    SmpStaticMessage smsg;
+    SmpValue storage[16];
+
+    CU_ASSERT_EQUAL(smp_message_get_capacity(NULL), 0);
+
+    /* we should get the given capacity with static message */
+    msg = smp_message_new_from_static(&smsg, sizeof(smsg), storage,
+            SMP_N_ELEMENTS(storage));
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
+    CU_ASSERT_EQUAL(smp_message_get_capacity(msg), 16);
+
+    msg = smp_message_new();
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
+
+    /* default capacity is 8 */
+    CU_ASSERT_EQUAL(smp_message_get_capacity(msg), 8);
+
+    smp_message_free(msg);
+}
+
+static void test_smp_message_set_capacity(void)
+{
+    SmpMessage *msg;
+    SmpStaticMessage smsg;
+    SmpValue storage[16];
+    size_t orig_cap;
+
+    /* set capacity should fail on statically allocated message */
+    msg = smp_message_new_from_static(&smsg, sizeof(smsg), storage,
+            SMP_N_ELEMENTS(storage));
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
+
+    CU_ASSERT_EQUAL(smp_message_set_capacity(msg, 32), SMP_ERROR_NOT_SUPPORTED);
+
+    msg = smp_message_new();
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
+
+    /* trying to reduce message capacity should fail */
+    orig_cap = smp_message_get_capacity(msg);
+    CU_ASSERT_EQUAL(smp_message_set_capacity(msg, orig_cap - 1),
+            SMP_ERROR_INVALID_PARAM);
+
+    /* setting the same capacity should success */
+    CU_ASSERT_EQUAL(smp_message_set_capacity(msg, orig_cap), 0);
+    CU_ASSERT_EQUAL(smp_message_get_capacity(msg), orig_cap);
+
+    /* trying to increase capacity should succeed */
+    CU_ASSERT_EQUAL(smp_message_set_capacity(msg, orig_cap + 1), 0);
+    CU_ASSERT_EQUAL(smp_message_get_capacity(msg), orig_cap + 1);
+
+    smp_message_free(msg);
+}
+
 static void setup_test_message_get(SmpMessage **msg)
 {
     SmpMessage *tmp;
 
     tmp = smp_message_new_with_id(33);
     CU_ASSERT_PTR_NOT_NULL_FATAL(tmp);
+    CU_ASSERT_EQUAL_FATAL(smp_message_set_capacity(tmp, 16), 0);
 
     tmp->values[0].type = SMP_TYPE_UINT8;
     tmp->values[0].value.u8 = 33;
@@ -171,17 +228,17 @@ static void test_smp_message_get(void)
     setup_test_message_get(&msg);
 
     /* out of bound index should fail */
-    ret = smp_message_get(msg, SMP_MESSAGE_MAX_VALUES + 10, SMP_TYPE_UINT8,
-            &u8, -1);
+    ret = smp_message_get(msg,
+            smp_message_get_capacity(msg) + 10, SMP_TYPE_UINT8, &u8, -1);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
 
     ret = smp_message_get(msg, 0, SMP_TYPE_UINT8, &u8,
-            SMP_MESSAGE_MAX_VALUES + 10, SMP_TYPE_UINT8, &u8,
+            smp_message_get_capacity(msg) + 10, SMP_TYPE_UINT8, &u8,
             1, SMP_TYPE_INT8, &i8, -1);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
 
     ret = smp_message_get(msg, 0, SMP_TYPE_UINT8, &u8,
-            SMP_MESSAGE_MAX_VALUES + 10, SMP_TYPE_UINT8, &u8, -1);
+            smp_message_get_capacity(msg) + 10, SMP_TYPE_UINT8, &u8, -1);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
 
     /* Bad type should cause an error */
@@ -234,11 +291,11 @@ static void test_smp_message_get_value(void)
     setup_test_message_get(&msg);
 
     /* out of bound index should fail */
-    ret = smp_message_get_value(msg, SMP_MESSAGE_MAX_VALUES + 10, &value);
+    ret = smp_message_get_value(msg, smp_message_get_capacity(msg) + 10, &value);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
 
     /* not initialized value should failed */
-    ret = smp_message_get_value(msg, SMP_MESSAGE_MAX_VALUES - 1,
+    ret = smp_message_get_value(msg, smp_message_get_capacity(msg) - 1,
             &value);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
 
@@ -329,11 +386,11 @@ static void test_smp_message_get_##type(void) \
     setup_test_message_get(&msg); \
 \
     /* out of bound index should fail */ \
-    ret = smp_message_get_##type(msg, SMP_MESSAGE_MAX_VALUES + 10, &tmp); \
+    ret = smp_message_get_##type(msg, smp_message_get_capacity(msg) + 10, &tmp); \
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND); \
 \
     /* fail if value is not initialized, ie NONE */ \
-    ret = smp_message_get_##type(msg, SMP_MESSAGE_MAX_VALUES - 1, &tmp); \
+    ret = smp_message_get_##type(msg, smp_message_get_capacity(msg) - 1, &tmp); \
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND); \
 \
     /* fail if we have the wrong type */ \
@@ -369,11 +426,11 @@ static void test_smp_message_get_cstring(void)
     setup_test_message_get(&msg);
 
     /* out of bound index should fail */
-    ret = smp_message_get_cstring(msg, SMP_MESSAGE_MAX_VALUES + 10, &str);
+    ret = smp_message_get_cstring(msg, smp_message_get_capacity(msg) + 10, &str);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
 
     /* fail if value is not initialized, ie NONE */
-    ret = smp_message_get_cstring(msg, SMP_MESSAGE_MAX_VALUES - 1, &str);
+    ret = smp_message_get_cstring(msg, smp_message_get_capacity(msg) - 1, &str);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
 
     /* fail if we have the wrong type */
@@ -398,11 +455,11 @@ static void test_smp_message_get_craw(void)
     setup_test_message_get(&msg);
 
     /* out of bound index should fail */
-    ret = smp_message_get_craw(msg, SMP_MESSAGE_MAX_VALUES + 10, &raw, &size);
+    ret = smp_message_get_craw(msg, smp_message_get_capacity(msg) + 10, &raw, &size);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
 
     /* fail if value is not initialized, ie NONE */
-    ret = smp_message_get_craw(msg, SMP_MESSAGE_MAX_VALUES - 1, &raw, &size);
+    ret = smp_message_get_craw(msg, smp_message_get_capacity(msg) - 1, &raw, &size);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
 
     /* fail if we have the wrong type */
@@ -425,18 +482,19 @@ static void test_smp_message_set(void)
 
     msg = smp_message_new();
     CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
+    CU_ASSERT_EQUAL(smp_message_set_capacity(msg, 16), 0);
 
     /* out of bound index should return in error */
     smp_message_set_id(msg, 33);
     ret = smp_message_set(msg,
-            SMP_MESSAGE_MAX_VALUES + 10, SMP_TYPE_UINT8, 3, -1);
+            smp_message_get_capacity(msg) + 10, SMP_TYPE_UINT8, 3, -1);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
     smp_message_clear(msg);
 
     smp_message_set_id(msg, 33);
     ret = smp_message_set(msg,
             0, SMP_TYPE_UINT8, (uint8_t) 5,
-            SMP_MESSAGE_MAX_VALUES + 10, SMP_TYPE_UINT8, 3,
+            smp_message_get_capacity(msg) + 10, SMP_TYPE_UINT8, 3,
             0, SMP_TYPE_UINT8, (uint8_t) 4, -1);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
     smp_message_clear(msg);
@@ -444,7 +502,7 @@ static void test_smp_message_set(void)
     smp_message_set_id(msg, 33);
     ret = smp_message_set(msg,
             0, SMP_TYPE_UINT8, 5,
-            SMP_MESSAGE_MAX_VALUES + 10, SMP_TYPE_UINT8, 3, -1);
+            smp_message_get_capacity(msg) + 10, SMP_TYPE_UINT8, 3, -1);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
     smp_message_clear(msg);
 
@@ -524,7 +582,7 @@ static void test_smp_message_set_value(void)
 
     /* out of bound index should return in error */
     smp_message_set_id(msg, 33);
-    ret = smp_message_set_value(msg, SMP_MESSAGE_MAX_VALUES + 10, &value1);
+    ret = smp_message_set_value(msg, smp_message_get_capacity(msg) + 10, &value1);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
     smp_message_clear(msg);
 
@@ -557,7 +615,7 @@ static void test_smp_message_set_##type_name(void) \
 \
     /* out of bound index should fail */ \
     smp_message_set_id(msg, 33);                                        \
-    ret = smp_message_set_##type_name(msg, SMP_MESSAGE_MAX_VALUES + 10,\
+    ret = smp_message_set_##type_name(msg, smp_message_get_capacity(msg) + 10,\
             (svalue)); \
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND); \
     smp_message_clear(msg); \
@@ -594,7 +652,7 @@ static void test_smp_message_set_cstring(void)
 
     /* out of bound index should fail */
     smp_message_set_id(msg, 33);
-    ret = smp_message_set_cstring(msg, SMP_MESSAGE_MAX_VALUES + 10, "foo");
+    ret = smp_message_set_cstring(msg, smp_message_get_capacity(msg) + 10, "foo");
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
     smp_message_clear(msg);
 
@@ -619,7 +677,7 @@ static void test_smp_message_set_craw(void)
 
     /* out of bound index should fail */
     smp_message_set_id(msg, 33);
-    ret = smp_message_set_craw(msg, SMP_MESSAGE_MAX_VALUES + 10,
+    ret = smp_message_set_craw(msg, smp_message_get_capacity(msg) + 10,
             (uint8_t *) "foo", 4);
     CU_ASSERT_EQUAL(ret, SMP_ERROR_NOT_FOUND);
     smp_message_clear(msg);
@@ -650,9 +708,10 @@ static void test_smp_message_encode(void)
 
     msg = smp_message_new();
     CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
+    CU_ASSERT_EQUAL_FATAL(smp_message_set_capacity(msg, 16), 0);
 
     smp_message_set_id(msg, 42);
-    smp_message_set(msg,
+    ret = smp_message_set(msg,
             0, SMP_TYPE_UINT8, 33,
             1, SMP_TYPE_INT8, -4,
             2, SMP_TYPE_UINT16, 24356,
@@ -666,6 +725,7 @@ static void test_smp_message_encode(void)
             10, SMP_TYPE_F32, f32_orig_value,
             11, SMP_TYPE_F64, f64_orig_value,
             -1);
+    CU_ASSERT_EQUAL_FATAL(ret, 0);
 
     /* encoding in a too small buffer should fail */
     ret = smp_message_encode(msg, buffer, 10);
@@ -778,6 +838,7 @@ static void test_smp_message_build_from_buffer(void)
 
     msg = smp_message_new();
     CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
+    CU_ASSERT_EQUAL_FATAL(smp_message_set_capacity(msg, 16), 0);
 
     /* a too small buffer should return in error */
     ret = smp_message_build_from_buffer(msg, buffer, 4);
@@ -829,24 +890,54 @@ static void test_smp_message_build_from_buffer(void)
     ret = smp_message_build_from_buffer(msg, buffer, sizeof(buffer));
     CU_ASSERT_EQUAL(ret, SMP_ERROR_BAD_MESSAGE);
 
-    /* a buffer with too many values should fail with the right error */
+    /* check behavior when input buffer have too many values */
     {
-        uint8_t buffer2[2 * (SMP_MESSAGE_MAX_VALUES + 2) + 8] = {
+        SmpMessage *tmp;
+        SmpStaticMessage smsg;
+        SmpValue storage[8];
+        uint8_t buffer2[2 * 16 + 8] = {
             0x03, 0x33, 0x24, 0x02,       /* message id */
             0x00,
         };
-        int i;
+        size_t i;
 
-        *((uint32_t *)(buffer2 + 4)) = 2 * (SMP_MESSAGE_MAX_VALUES + 2);
+        /* a statically allocated SmpMessage should fail with SMP_ERROR_TOO_BIG
+         * error. */
+        tmp = smp_message_new_from_static(&smsg, sizeof(smsg), storage,
+                SMP_N_ELEMENTS(storage));
+        CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
 
-        for (i = 0; i < SMP_MESSAGE_MAX_VALUES + 2; i++) {
+        *((uint32_t *)(buffer2 + 4)) = 2 * 16;
+
+        for (i = 0; i < 16; i++) {
             buffer2[8 + 2 * i] = SMP_TYPE_UINT8;
             buffer2[8 + 2 * i + 1] = 0x42;
         }
 
-        ret = smp_message_build_from_buffer(msg, buffer2, sizeof(buffer2));
+        ret = smp_message_build_from_buffer(tmp, buffer2, sizeof(buffer2));
         CU_ASSERT_EQUAL(ret, SMP_ERROR_TOO_BIG);
-        smp_message_clear(msg);
+
+        /* a buffer with more values than a dynamically allocated message can
+         * hold should reallocate memory to be able to parse the whole frame */
+        tmp = smp_message_new();
+        CU_ASSERT_PTR_NOT_NULL_FATAL(tmp);
+
+        /* assume that default capacity is 8 */
+        CU_ASSERT_EQUAL_FATAL(smp_message_get_capacity(tmp), 8);
+
+        ret = smp_message_build_from_buffer(tmp, buffer2, sizeof(buffer2));
+        CU_ASSERT_EQUAL(ret, 0);
+        CU_ASSERT_TRUE(smp_message_get_capacity(tmp) >= 16);
+
+        for (i = 0; i < 16; i++) {
+            uint8_t v;
+
+            ret = smp_message_get_uint8(tmp, i, &v);
+            CU_ASSERT_EQUAL(ret, 0);
+            CU_ASSERT_EQUAL(v, 0x42);
+        }
+
+        smp_message_free(tmp);
     }
 
     /* a buffer with a bad string size should fail */
@@ -901,6 +992,8 @@ static Test tests[] = {
     DEFINE_TEST(test_smp_message_new_with_id),
     DEFINE_TEST(test_smp_message_new_from_static),
     DEFINE_TEST(test_smp_message_new_from_static_with_id),
+    DEFINE_TEST(test_smp_message_get_capacity),
+    DEFINE_TEST(test_smp_message_set_capacity),
     DEFINE_TEST(test_smp_message_get),
     DEFINE_TEST(test_smp_message_get_value),
     DEFINE_TEST(test_smp_message_get_uint8),
