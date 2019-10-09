@@ -34,6 +34,7 @@ static void test_smp_message_new_with_id(void)
     CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
 
     CU_ASSERT_EQUAL(smp_message_get_msgid(msg), 42);
+    smp_message_free(msg);
 }
 
 static void test_smp_message_new_from_static(void)
