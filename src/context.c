@@ -173,7 +173,7 @@ void smp_context_free(SmpContext *ctx)
     if (ctx->statically_allocated)
         return;
 
-    free(ctx->decoder);
+    smp_serial_protocol_decoder_free(ctx->decoder);
     free(ctx);
 }
 
