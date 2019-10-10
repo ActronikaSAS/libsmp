@@ -21,6 +21,7 @@
 #ifndef LIBSMP_H
 #define LIBSMP_H
 
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -201,6 +202,7 @@ SMP_API void smp_message_set_id(SmpMessage *msg, uint32_t id);
 SMP_API int smp_message_n_args(SmpMessage *msg);
 
 SMP_API int smp_message_get(SmpMessage *msg, int index, ...);
+SMP_API int smp_message_get_valist(SmpMessage *msg, int index, va_list ap);
 SMP_API int smp_message_get_value(SmpMessage *msg, int index, SmpValue *value);
 SMP_API int smp_message_get_uint8(SmpMessage *msg, int index, uint8_t *value);
 SMP_API int smp_message_get_int8(SmpMessage *msg, int index, int8_t *value);
@@ -217,6 +219,7 @@ SMP_API int smp_message_get_craw(SmpMessage *msg, int index, const uint8_t **raw
                 size_t *size);
 
 SMP_API int smp_message_set(SmpMessage *msg, int index, ...);
+SMP_API int smp_message_set_valist(SmpMessage *msg, int index, va_list ap);
 SMP_API int smp_message_set_value(SmpMessage *msg, int index, const SmpValue *value);
 SMP_API int smp_message_set_uint8(SmpMessage *msg, int index, uint8_t value);
 SMP_API int smp_message_set_int8(SmpMessage *msg, int index, int8_t value);

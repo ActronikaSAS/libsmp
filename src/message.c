@@ -750,10 +750,31 @@ int smp_message_get(SmpMessage *msg, int index, ...)
     va_list ap;
     int ret;
 
+    va_start(ap, index);
+    ret = smp_message_get_valist(msg, index, ap);
+    va_end(ap);
+
+    return ret;
+}
+
+/**
+ * \ingroup message
+ * Get arguments from the message. Variable arguments should be the index of
+ * the message argument, the type of the argument as a SmpType and pointer to
+ * the storage location. The last parameter should be set to -1.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index the index of the first argument to get
+ * @param[in] ap a variable argument list.
+ *
+ * @return 0 on success, a SmpError otherwise.
+ */
+int smp_message_get_valist(SmpMessage *msg, int index, va_list ap)
+{
+    int ret;
+
     return_val_if_fail(msg != NULL, SMP_ERROR_INVALID_PARAM);
     return_val_if_fail(index >= 0, SMP_ERROR_INVALID_PARAM);
-
-    va_start(ap, index);
 
     do {
         SmpType type;
@@ -863,7 +884,6 @@ int smp_message_get(SmpMessage *msg, int index, ...)
     ret = 0;
 
 done:
-    va_end(ap);
     return ret;
 }
 
@@ -1118,10 +1138,31 @@ int smp_message_set(SmpMessage *msg, int index, ...)
     va_list ap;
     int ret;
 
+    va_start(ap, index);
+    ret = smp_message_set_valist(msg, index, ap);
+    va_end(ap);
+
+    return ret;
+}
+
+/**
+ * \ingroup message
+ * Set arguments from the message. Variable arguments should be the index of
+ * the message argument, the type of the argument as a SmpType and pointer to
+ * the storage location. The last parameter should be set to -1.
+ *
+ * @param[in] msg a SmpMessage
+ * @param[in] index the index of the first argument to set
+ * @param[in] ap a variable argument list.
+ *
+ * @return 0 on success, a SmpError otherwise.
+ */
+int smp_message_set_valist(SmpMessage *msg, int index, va_list ap)
+{
+    int ret;
+
     return_val_if_fail(msg != NULL, SMP_ERROR_INVALID_PARAM);
     return_val_if_fail(index >= 0, SMP_ERROR_INVALID_PARAM);
-
-    va_start(ap, index);
 
     do {
         SmpValue val;
@@ -1180,7 +1221,6 @@ int smp_message_set(SmpMessage *msg, int index, ...)
     ret = 0;
 
 done:
-    va_end(ap);
     return ret;
 }
 
