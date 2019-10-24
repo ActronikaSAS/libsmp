@@ -25,6 +25,13 @@ Supported platforms
    avr-port
 
 .. toctree::
+   :caption: Protocol specifications
+   :maxdepth: 1
+
+   protocols/message-protocol
+   protocols/serial-protocol
+
+.. toctree::
    :caption: API Reference
    :maxdepth: 1
    :glob:

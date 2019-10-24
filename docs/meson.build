@@ -12,6 +12,8 @@ docfiles = [
   'avr-port.rst',
   'index.rst',
   'installation.rst',
+  'protocols/message-protocol.rst',
+  'protocols/serial-protocol.rst',
   'static-api.rst',
   ]
 
