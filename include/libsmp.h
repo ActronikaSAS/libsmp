@@ -155,7 +155,7 @@ typedef enum
  */
 typedef struct
 {
-    SmpType type;
+    SmpType type;  /**< the type of the value */
     union {
         uint8_t u8;
         uint16_t u16;
@@ -176,7 +176,7 @@ typedef struct
             const uint8_t *craw;
             size_t craw_size;
         };
-    } value;
+    } value; /**< the value */
 } SmpValue;
 
 /**
@@ -280,9 +280,29 @@ typedef struct
 /* Context API */
 typedef struct SmpContext SmpContext;
 
+/**
+ * Event callback structure.
+ */
 typedef struct
 {
+    /**
+     * Called when a new message has been received.
+     *
+     * @warning msg is only valid in the callback.
+     *
+     * @param[in] ctx the Context the message comes from.
+     * @param[in] msg the message.
+     * @param[in] userdata the userdata pointer.
+     */
     void (*new_message_cb)(SmpContext *ctx, SmpMessage *msg, void *userdata);
+
+    /**
+     * Called when an error occurs while receiving data.
+     *
+     * @param[in] ctx the context on which the error occurs.
+     * @param[in] error the SmpError.
+     * @param[in] userdata pointer to the userdata.
+     */
     void (*error_cb)(SmpContext *ctx, SmpError error, void *userdata);
 } SmpEventCallbacks;
 
