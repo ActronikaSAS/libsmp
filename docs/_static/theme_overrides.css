@@ -1,0 +1,12 @@
+/* add a bottom line to each function to seperate them */
+.function, .type {
+    border-bottom-style: solid;
+    border-width: thin;
+    border-color: lightgrey;
+}
+
+@media screen {
+    /* our docs is intended to be read on computer, not mobile, so remove the
+     * max width limitation */
+    .wy-nav-content{max-width: none; }
+}

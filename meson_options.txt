@@ -1,3 +1,5 @@
+option('docs', type: 'feature', value: 'auto')
+
 option('avr-uart-buffer-size', type : 'string', value : '64',
         description : 'The buffer size used for UART reception on AVR')
 option('avr-enable-serial0', type : 'boolean', value : true,

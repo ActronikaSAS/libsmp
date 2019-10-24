@@ -201,4 +201,5 @@ pkgconfig.generate(libsmp,
     url: 'https://github.com/ActronikaSAS/libsmp'
     )
 
+subdir('docs')
 subdir('tests')

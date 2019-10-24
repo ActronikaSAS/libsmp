@@ -20,6 +20,9 @@
  *
  * Encode and decode message.
  */
+/**
+ * \defgroup message-funcs
+ */
 
 #include "config.h"
 
@@ -448,7 +451,7 @@ int smp_message_build_from_buffer(SmpMessage *msg, const uint8_t *buffer,
 /* API */
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Create a new SmpMessage.
  *
  * @return a new SmpMessage or NULL on error.
@@ -459,7 +462,7 @@ SmpMessage *smp_message_new(void)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Create a new SmpMessage with given id.
  *
  * @param[in] id the ID of the message
@@ -488,7 +491,7 @@ SmpMessage *smp_message_new_with_id(uint32_t id)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Create a new SmpMessage from a static memory space.
  * @warning: for now DON'T use smp_message_init() or
  * smp_message_init_from_buffer() on a buffer created using this func.
@@ -508,7 +511,7 @@ SmpMessage *smp_message_new_from_static(SmpStaticMessage *smsg,
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Create a new SmpMessage from a static memory space
  * @warning: for now DON'T use smp_message_init() or
  * smp_message_init_from_buffer() on a buffer created using this func.
@@ -544,7 +547,7 @@ SmpMessage *smp_message_new_from_static_with_id(SmpStaticMessage *smsg,
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Free a previously allocated SmpMessage.
  *
  * @param[in] msg a SmpMessage
@@ -561,7 +564,7 @@ void smp_message_free(SmpMessage *msg)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Clear a SmpMessage.
  *
  * @param[in] msg a SmpMessage
@@ -575,7 +578,7 @@ void smp_message_clear(SmpMessage *msg)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get the capacity of a message, ie the maximum number of value it can hold.
  *
  * @param[in] msg a SmpMessage
@@ -590,7 +593,7 @@ size_t smp_message_get_capacity(SmpMessage *msg)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Set the capacity of a message, ie the maximum number of value it can contains.
  * This is useful to pre-allocated a message large enough to contains all the
  * values without allocating during set().
@@ -632,7 +635,7 @@ int smp_message_set_capacity(SmpMessage *msg, size_t capacity)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Encode a SmpMessage in the provided buffer.
  *
  * @param[in] msg a SmpMessage
@@ -680,7 +683,7 @@ size_t smp_message_get_encoded_size(SmpMessage *message)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get the message ID of a SmpMessage.
  *
  * @param[in] msg a SmpMessage
@@ -695,7 +698,7 @@ uint32_t smp_message_get_msgid(SmpMessage *msg)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Set the ID of the message without resetting the values
  *
  * @param[in] msg a SmpMessage
@@ -709,7 +712,7 @@ void smp_message_set_id(SmpMessage *msg, uint32_t id)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get the number of valid arguments in a message.
  *
  * @param[in] msg a SmpMessage
@@ -734,7 +737,7 @@ int smp_message_n_args(SmpMessage *msg)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get arguments from the message. Variable arguments should be the index
  * of the message argument, type of the argument as a SmpType and pointer to
  * a location to store the return value. The last variable should be set to -1.
@@ -758,7 +761,7 @@ int smp_message_get(SmpMessage *msg, int index, ...)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get arguments from the message. Variable arguments should be the index of
  * the message argument, the type of the argument as a SmpType and pointer to
  * the storage location. The last parameter should be set to -1.
@@ -888,7 +891,7 @@ done:
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get the message value pointed by index
  *
  * @param[in] msg a SmpMessage
@@ -914,7 +917,7 @@ int smp_message_get_value(SmpMessage *msg, int index, SmpValue *value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get the message uint8 value pointed by index and store it into value.
  * Caller is responsible to ensure that the value at index has the correct
  * type.
@@ -931,7 +934,7 @@ int smp_message_get_uint8(SmpMessage *msg, int index, uint8_t *value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get the message int8 value pointed by index and store it into value.
  * Caller is responsible to ensure that the value at index has the correct
  * type.
@@ -948,7 +951,7 @@ int smp_message_get_int8(SmpMessage *msg, int index, int8_t *value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get the message uint16 value pointed by index and store it into value.
  * Caller is responsible to ensure that the value at index has the correct
  * type.
@@ -965,7 +968,7 @@ int smp_message_get_uint16(SmpMessage *msg, int index, uint16_t *value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get the message int16 value pointed by index and store it into value.
  * Caller is responsible to ensure that the value at index has the correct
  * type.
@@ -982,7 +985,7 @@ int smp_message_get_int16(SmpMessage *msg, int index, int16_t *value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get the message uint32 value pointed by index and store it into value.
  * Caller is responsible to ensure that the value at index has the correct
  * type.
@@ -999,7 +1002,7 @@ int smp_message_get_uint32(SmpMessage *msg, int index, uint32_t *value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get the message int32 value pointed by index and store it into value.
  * Caller is responsible to ensure that the value at index has the correct
  * type.
@@ -1016,7 +1019,7 @@ int smp_message_get_int32(SmpMessage *msg, int index, int32_t *value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get the message uint64 value pointed by index and store it into value.
  * Caller is responsible to ensure that the value at index has the correct
  * type.
@@ -1033,7 +1036,7 @@ int smp_message_get_uint64(SmpMessage *msg, int index, uint64_t *value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get the message int64 value pointed by index and store it into value.
  * Caller is responsible to ensure that the value at index has the correct
  * type.
@@ -1050,7 +1053,7 @@ int smp_message_get_int64(SmpMessage *msg, int index, int64_t *value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get the message float value pointed by index and store it into value.
  * Caller is responsible to ensure that the value at index has the correct
  * type.
@@ -1067,7 +1070,7 @@ int smp_message_get_float(SmpMessage *msg, int index, float *value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get the message double value pointed by index and store it into value.
  * Caller is responsible to ensure that the value at index has the correct
  * type.
@@ -1084,7 +1087,7 @@ int smp_message_get_double(SmpMessage *msg, int index, double *value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get the message string value pointed by index and store it into value.
  * Caller is responsible to ensure that the value at index has the correct
  * type.
@@ -1102,7 +1105,7 @@ int smp_message_get_cstring(SmpMessage *msg, int index, const char **value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Get the message raw buffer value pointed by index and store it into value.
  * Caller is responsible to ensure that the value at index has the correct
  * type.
@@ -1122,7 +1125,7 @@ int smp_message_get_craw(SmpMessage *msg, int index, const uint8_t **raw,
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Set arguments in the message. Variable arguments should be the index
  * of the message argument, type of the argument as a SmpType and pointer to
  * a location to store the return value. The last variable should be set to -1.
@@ -1146,7 +1149,7 @@ int smp_message_set(SmpMessage *msg, int index, ...)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Set arguments from the message. Variable arguments should be the index of
  * the message argument, the type of the argument as a SmpType and pointer to
  * the storage location. The last parameter should be set to -1.
@@ -1225,7 +1228,7 @@ done:
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Set the message value pointed by index
  *
  * @param[in] msg a SmpMessage
@@ -1248,7 +1251,7 @@ int smp_message_set_value(SmpMessage *msg, int index, const SmpValue *value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Set the message value pointed by index to given uint8 value.
  *
  * @param[in] msg a SmpMessage
@@ -1263,7 +1266,7 @@ int smp_message_set_uint8(SmpMessage *msg, int index, uint8_t value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Set the message value pointed by index to given int8 value.
  *
  * @param[in] msg a SmpMessage
@@ -1278,7 +1281,7 @@ int smp_message_set_int8(SmpMessage *msg, int index, int8_t value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Set the message value pointed by index to given uint16 value.
  *
  * @param[in] msg a SmpMessage
@@ -1293,7 +1296,7 @@ int smp_message_set_uint16(SmpMessage *msg, int index, uint16_t value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Set the message value pointed by index to given int16 value.
  *
  * @param[in] msg a SmpMessage
@@ -1308,7 +1311,7 @@ int smp_message_set_int16(SmpMessage *msg, int index, int16_t value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Set the message value pointed by index to given uint32 value.
  *
  * @param[in] msg a SmpMessage
@@ -1323,7 +1326,7 @@ int smp_message_set_uint32(SmpMessage *msg, int index, uint32_t value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Set the message value pointed by index to given int32 value.
  *
  * @param[in] msg a SmpMessage
@@ -1338,7 +1341,7 @@ int smp_message_set_int32(SmpMessage *msg, int index, int32_t value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Set the message value pointed by index to given uint64 value.
  *
  * @param[in] msg a SmpMessage
@@ -1353,7 +1356,7 @@ int smp_message_set_uint64(SmpMessage *msg, int index, uint64_t value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Set the message value pointed by index to given int64 value.
  *
  * @param[in] msg a SmpMessage
@@ -1368,7 +1371,7 @@ int smp_message_set_int64(SmpMessage *msg, int index, int64_t value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Set the message value pointed by index to given float value.
  *
  * @param[in] msg a SmpMessage
@@ -1383,7 +1386,7 @@ int smp_message_set_float(SmpMessage *msg, int index, float value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Set the message value pointed by index to given double value.
  *
  * @param[in] msg a SmpMessage
@@ -1398,7 +1401,7 @@ int smp_message_set_double(SmpMessage *msg, int index, double value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Set the message value pointed by index to given string.
  * Warning: the string is not copied so it shall exist as long as message exist.
  *
@@ -1414,7 +1417,7 @@ int smp_message_set_cstring(SmpMessage *msg, int index, const char *value)
 }
 
 /**
- * \ingroup message
+ * \ingroup message-funcs
  * Set the message value pointed by index to given raw data.
  * Warning: data is not copied so it shall exist as long as message exist.
  *
