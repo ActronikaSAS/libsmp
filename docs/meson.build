@@ -1,4 +1,4 @@
-if get_option('doc').disabled()
+if get_option('docs').disabled()
   subdir_done()
 endif
 
