@@ -1,3 +1,7 @@
+if get_option('tests').disabled()
+  subdir_done()
+endif
+
 tests_src = [
     'context.c',
     'main.c',
