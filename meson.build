@@ -1,6 +1,6 @@
 project('smp', 'c', 'cpp',
     version : '0.7.90.1',
-    meson_version : '>= 0.46.0',
+    meson_version : '>= 0.48.0',
     default_options : [
       'buildtype=debugoptimized',
       'warning_level=2'
