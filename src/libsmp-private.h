@@ -34,7 +34,7 @@ extern "C" {
 #ifdef __AVR
 /* we don't have sys/types.h in avr-libc so define ssize_t ourself */
 typedef long ssize_t;
-#elif defined(_WIN32) || defined(_WIN64)
+#elif (defined(_WIN32) || defined(_WIN64)) && !defined(__MINGW32__)
 typedef signed __int64 ssize_t;
 #endif
 
