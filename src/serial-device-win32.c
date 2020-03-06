@@ -167,9 +167,28 @@ int smp_serial_device_set_config(SmpSerialDevice *device,
             dcb.BaudRate = CBR_57600;
             break;
         case SMP_SERIAL_BAUDRATE_115200:
-        default:
             dcb.BaudRate = CBR_115200;
             break;
+        case SMP_SERIAL_BAUDRATE_230400:
+            dcb.BaudRate = 230400;
+            break;
+        case SMP_SERIAL_BAUDRATE_460800:
+            dcb.BaudRate = 460800;
+            break;
+        case SMP_SERIAL_BAUDRATE_921600:
+            dcb.BaudRate = 921600;
+            break;
+        case SMP_SERIAL_BAUDRATE_1000000:
+            dcb.BaudRate = 1000000;
+            break;
+        case SMP_SERIAL_BAUDRATE_2000000:
+            dcb.BaudRate = 2000000;
+            break;
+        case SMP_SERIAL_BAUDRATE_4000000:
+            dcb.BaudRate = 4000000;
+            break;
+        default:
+            return SMP_ERROR_INVALID_PARAM;
     }
 
     switch (parity) {

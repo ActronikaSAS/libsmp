@@ -155,9 +155,28 @@ int smp_serial_device_set_config(SmpSerialDevice *device,
                 speed = B57600;
                 break;
             case SMP_SERIAL_BAUDRATE_115200:
-            default:
                 speed = B115200;
                 break;
+            case SMP_SERIAL_BAUDRATE_230400:
+                speed = B230400;
+                break;
+            case SMP_SERIAL_BAUDRATE_460800:
+                speed = B460800;
+                break;
+            case SMP_SERIAL_BAUDRATE_921600:
+                speed = B921600;
+                break;
+            case SMP_SERIAL_BAUDRATE_1000000:
+                speed = B1000000;
+                break;
+            case SMP_SERIAL_BAUDRATE_2000000:
+                speed = B2000000;
+                break;
+            case SMP_SERIAL_BAUDRATE_4000000:
+                speed = B4000000;
+                break;
+            default:
+                return SMP_ERROR_INVALID_PARAM;
         }
         cfsetispeed(&term, speed);
         cfsetospeed(&term, speed);

@@ -251,6 +251,12 @@ typedef enum
     SMP_SERIAL_BAUDRATE_38400,     /**< 38400 bauds */
     SMP_SERIAL_BAUDRATE_57600,     /**< 57600 bauds */
     SMP_SERIAL_BAUDRATE_115200,    /**< 115200 bauds */
+    SMP_SERIAL_BAUDRATE_230400,    /**< 230400 bauds */
+    SMP_SERIAL_BAUDRATE_460800,    /**< 460800 bauds */
+    SMP_SERIAL_BAUDRATE_921600,    /**< 921600 bauds */
+    SMP_SERIAL_BAUDRATE_1000000,   /**< 1000000 bauds */
+    SMP_SERIAL_BAUDRATE_2000000,   /**< 2000000 bauds */
+    SMP_SERIAL_BAUDRATE_4000000,   /**< 4000000 bauds */
 } SmpSerialBaudrate;
 
 /**

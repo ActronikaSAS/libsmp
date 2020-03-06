@@ -249,6 +249,24 @@ int smp_serial_device_set_config(SmpSerialDevice *sdev,
         case SMP_SERIAL_BAUDRATE_115200:
             br = 115200;
             break;
+        case SMP_SERIAL_BAUDRATE_230400:
+            br = 230400;
+            break;
+        case SMP_SERIAL_BAUDRATE_460800:
+            br = 460800;
+            break;
+        case SMP_SERIAL_BAUDRATE_921600:
+            br = 921600;
+            break;
+        case SMP_SERIAL_BAUDRATE_1000000:
+            br = 1000000;
+            break;
+        case SMP_SERIAL_BAUDRATE_2000000:
+            br = 2000000;
+            break;
+        case SMP_SERIAL_BAUDRATE_4000000:
+            br = 4000000;
+            break;
         default:
             return SMP_ERROR_INVALID_PARAM;
     }

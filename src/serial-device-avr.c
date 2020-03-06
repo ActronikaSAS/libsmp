@@ -271,6 +271,90 @@ static void set_baudrate_115200(UARTDevice *device)
 #endif
 }
 
+static void set_baudrate_230400(UARTDevice *device)
+{
+#undef BAUD
+#define BAUD 230400
+#include <util/setbaud.h>
+    *(device->regs.br_h) = UBRRH_VALUE;
+    *(device->regs.br_l) = UBRRL_VALUE;
+#if USE_2X
+    *(device->regs.csr_a) |= _BV(U2X0);
+#else
+    *(device->regs.csr_a) &= ~(_BV(U2X0));
+#endif
+}
+
+static void set_baudrate_460800(UARTDevice *device)
+{
+#undef BAUD
+#define BAUD 460800
+#include <util/setbaud.h>
+    *(device->regs.br_h) = UBRRH_VALUE;
+    *(device->regs.br_l) = UBRRL_VALUE;
+#if USE_2X
+    *(device->regs.csr_a) |= _BV(U2X0);
+#else
+    *(device->regs.csr_a) &= ~(_BV(U2X0));
+#endif
+}
+
+static void set_baudrate_921600(UARTDevice *device)
+{
+#undef BAUD
+#define BAUD 921600
+#include <util/setbaud.h>
+    *(device->regs.br_h) = UBRRH_VALUE;
+    *(device->regs.br_l) = UBRRL_VALUE;
+#if USE_2X
+    *(device->regs.csr_a) |= _BV(U2X0);
+#else
+    *(device->regs.csr_a) &= ~(_BV(U2X0));
+#endif
+}
+
+static void set_baudrate_1000000(UARTDevice *device)
+{
+#undef BAUD
+#define BAUD 1000000
+#include <util/setbaud.h>
+    *(device->regs.br_h) = UBRRH_VALUE;
+    *(device->regs.br_l) = UBRRL_VALUE;
+#if USE_2X
+    *(device->regs.csr_a) |= _BV(U2X0);
+#else
+    *(device->regs.csr_a) &= ~(_BV(U2X0));
+#endif
+}
+
+static void set_baudrate_2000000(UARTDevice *device)
+{
+#undef BAUD
+#define BAUD 2000000
+#include <util/setbaud.h>
+    *(device->regs.br_h) = UBRRH_VALUE;
+    *(device->regs.br_l) = UBRRL_VALUE;
+#if USE_2X
+    *(device->regs.csr_a) |= _BV(U2X0);
+#else
+    *(device->regs.csr_a) &= ~(_BV(U2X0));
+#endif
+}
+
+static void set_baudrate_4000000(UARTDevice *device)
+{
+#undef BAUD
+#define BAUD 4000000
+#include <util/setbaud.h>
+    *(device->regs.br_h) = UBRRH_VALUE;
+    *(device->regs.br_l) = UBRRL_VALUE;
+#if USE_2X
+    *(device->regs.csr_a) |= _BV(U2X0);
+#else
+    *(device->regs.csr_a) &= ~(_BV(U2X0));
+#endif
+}
+
 static void set_baudrate(UARTDevice *device, SmpSerialBaudrate baudrate)
 {
     switch (baudrate) {
@@ -297,6 +381,24 @@ static void set_baudrate(UARTDevice *device, SmpSerialBaudrate baudrate)
             break;
         case SMP_SERIAL_BAUDRATE_115200:
             set_baudrate_115200(device);
+            break;
+        case SMP_SERIAL_BAUDRATE_230400:
+            set_baudrate_230400(device);
+            break;
+        case SMP_SERIAL_BAUDRATE_460800:
+            set_baudrate_460800(device);
+            break;
+        case SMP_SERIAL_BAUDRATE_921600:
+            set_baudrate_921600(device);
+            break;
+        case SMP_SERIAL_BAUDRATE_1000000:
+            set_baudrate_1000000(device);
+            break;
+        case SMP_SERIAL_BAUDRATE_2000000:
+            set_baudrate_2000000(device);
+            break;
+        case SMP_SERIAL_BAUDRATE_4000000:
+            set_baudrate_4000000(device);
             break;
         default:
             break;
