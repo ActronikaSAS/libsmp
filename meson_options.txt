@@ -1,6 +1,8 @@
 option('docs', type: 'feature', value: 'auto')
 option('tests', type: 'feature', value: 'auto')
 
+option('read-chunk-size', type: 'integer', min: 1, value: 1,
+        description : 'Number of bytes processed by a single call of smp_context_process_fd')
 option('avr-uart-buffer-size', type : 'string', value : '64',
         description : 'The buffer size used for UART reception on AVR')
 option('avr-enable-serial0', type : 'boolean', value : true,

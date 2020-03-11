@@ -94,6 +94,8 @@ cdata.set('AVR_ENABLE_SERIAL3', get_option('avr-enable-serial3'),
 cdata.set('SMP_SERIAL_DEVICE_AVR_CBUF_SIZE',
     get_option('avr-uart-buffer-size').to_int(),
     description : 'The buffer size used for UART reception on AVR')
+cdata.set('SMP_CONTEXT_PROCESS_CHUNK_SIZE', get_option('read-chunk-size'),
+    description : 'Number of bytes processed by a single call of smp_context_process_fd')
 
 configure_file(output : 'config.h',
     configuration: cdata)
