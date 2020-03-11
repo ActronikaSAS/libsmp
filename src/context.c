@@ -31,6 +31,7 @@
 
 #include "buffer.h"
 #include "serial-device.h"
+#include "config.h"
 
 SMP_STATIC_ASSERT(sizeof(SmpContext) == sizeof(SmpStaticContext));
 
@@ -350,17 +351,19 @@ done:
  */
 int smp_context_process_fd(SmpContext *ctx)
 {
+    static char chunk[SMP_CONTEXT_PROCESS_CHUNK_SIZE];
+
     return_val_if_fail(ctx != NULL, SMP_ERROR_INVALID_PARAM);
     return_val_if_fail(ctx->opened, SMP_ERROR_BAD_FD);
 
     while (1) {
         ssize_t rbytes;
-        char c;
         uint8_t *frame;
         size_t framesize;
         int ret;
 
-        rbytes = smp_serial_device_read(&ctx->device, &c, 1);
+        rbytes = smp_serial_device_read(&ctx->device, chunk,
+                SMP_CONTEXT_PROCESS_CHUNK_SIZE);
         if (rbytes < 0) {
             if (rbytes == SMP_ERROR_WOULD_BLOCK)
                 return 0;
@@ -370,13 +373,16 @@ int smp_context_process_fd(SmpContext *ctx)
             return 0;
         }
 
-        ret = smp_serial_protocol_decoder_process_byte(ctx->decoder, c, &frame,
-                &framesize);
-        if (ret < 0)
-            smp_context_notify_error(ctx, ret);
+        ssize_t i;
+        for (i = 0; i < rbytes; i++) {
+            ret = smp_serial_protocol_decoder_process_byte(ctx->decoder,
+                    chunk[i], &frame, &framesize);
+            if (ret < 0)
+                smp_context_notify_error(ctx, ret);
 
-        if (frame != NULL)
-            smp_context_process_serial_frame(ctx, frame, framesize);
+            if (frame != NULL)
+                smp_context_process_serial_frame(ctx, frame, framesize);
+        }
     }
 }
 

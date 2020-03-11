@@ -28,7 +28,10 @@ EXCLUDED_FILES = [
 ]
 
 CONFIGURATION_PARAMETERS = {
-    "config.h": [],
+    "config.h": [
+        ("SMP_CONTEXT_PROCESS_CHUNK_SIZE", 1,
+        "Number of bytes processed by a single call of smp_context_process_fd")
+        ],
 }
 
 LIBSMP_STATIC_FILENAME = 'libsmp-static.h'
