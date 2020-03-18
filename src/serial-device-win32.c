@@ -284,6 +284,7 @@ int smp_serial_device_wait(SmpSerialDevice *device, int timeout_ms)
                  * been removed */
                 return SMP_ERROR_PIPE;
             }
+            return SMP_ERROR_OTHER;
         case WAIT_ABANDONED:
         default:
             return SMP_ERROR_OTHER;
