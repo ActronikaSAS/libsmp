@@ -117,6 +117,14 @@ int smp_serial_device_open(SmpSerialDevice *device, const char *path)
         return ret;
     }
 
+    bret = SetCommMask(handle, EV_RXCHAR);
+    if (!bret)
+    {
+        ret = get_last_error_as_smp_error();
+        CloseHandle(handle);
+        return ret;
+    }
+
     device->handle = handle;
     return 0;
 }
@@ -248,25 +256,5 @@ ssize_t smp_serial_device_read(SmpSerialDevice *device, void *buf, size_t size)
 
 int smp_serial_device_wait(SmpSerialDevice *device, int timeout_ms)
 {
-    int ret;
-
-    if (timeout_ms < 0)
-        timeout_ms = INFINITE;
-
-    ret = WaitForSingleObject(device->handle, timeout_ms);
-    switch (ret) {
-        case WAIT_OBJECT_0:
-            return 0;
-        case WAIT_TIMEOUT:
-            return SMP_ERROR_TIMEDOUT;
-        case WAIT_FAILED:
-            if (GetLastError() == ERROR_GEN_FAILURE) {
-                /* this is the error code which is returned when device has
-                 * been removed */
-                return SMP_ERROR_PIPE;
-            }
-        case WAIT_ABANDONED:
-        default:
-            return SMP_ERROR_OTHER;
-    }
+    return 0;
 }

@@ -350,15 +350,17 @@ done:
  */
 int smp_context_process_fd(SmpContext *ctx)
 {
+    DWORD dwEventMask;
+    ssize_t rbytes;
+    char c;
+    uint8_t* frame = NULL;
+    size_t framesize;
+    int ret;
+
     return_val_if_fail(ctx != NULL, SMP_ERROR_INVALID_PARAM);
     return_val_if_fail(ctx->opened, SMP_ERROR_BAD_FD);
 
-    while (1) {
-        ssize_t rbytes;
-        char c;
-        uint8_t *frame;
-        size_t framesize;
-        int ret;
+    while (frame == NULL) {
 
         rbytes = smp_serial_device_read(&ctx->device, &c, 1);
         if (rbytes < 0) {
@@ -366,17 +368,19 @@ int smp_context_process_fd(SmpContext *ctx)
                 return 0;
 
             return (int) rbytes;
-        } else if (rbytes == 0) {
-            return 0;
+        } else if (rbytes == 0 && frame == NULL) {
+            WaitCommEvent(ctx->device.handle, &dwEventMask, NULL);
         }
-
-        ret = smp_serial_protocol_decoder_process_byte(ctx->decoder, c, &frame,
+        else
+        {
+            ret = smp_serial_protocol_decoder_process_byte(ctx->decoder, c, &frame,
                 &framesize);
-        if (ret < 0)
-            smp_context_notify_error(ctx, ret);
+            if (ret < 0)
+                smp_context_notify_error(ctx, ret);
 
-        if (frame != NULL)
-            smp_context_process_serial_frame(ctx, frame, framesize);
+            if (frame != NULL)
+                smp_context_process_serial_frame(ctx, frame, framesize);
+        }
     }
 }
 
