@@ -159,6 +159,9 @@ static void rx_interrupt_handler(UARTDevice *dev)
         dev->windex = 0;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcpp"
+
 static void set_baudrate_1200(UARTDevice *device)
 {
 #undef BAUD
@@ -354,6 +357,8 @@ static void set_baudrate_4000000(UARTDevice *device)
     *(device->regs.csr_a) &= ~(_BV(U2X0));
 #endif
 }
+
+#pragma GCC diagnostic pop
 
 static void set_baudrate(UARTDevice *device, SmpSerialBaudrate baudrate)
 {
