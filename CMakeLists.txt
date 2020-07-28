@@ -4,14 +4,15 @@ set(src_files "src/buffer.c"
               "src/libsmp.c"
               "src/message.c"
               "src/serial-protocol.c"
-              "src/serial-device-stubs.c"
+              "src/serial-device-esp32-bt-spp.c"
 )
 
 # Add include directory
 set(inc_dir "src" "include")
 
 idf_component_register(SRCS ${src_files}
-                       INCLUDE_DIRS ${inc_dir})
+                       INCLUDE_DIRS ${inc_dir}
+                       REQUIRES bt)
 
 # Set compiler definitions
 target_compile_definitions(${COMPONENT_LIB} PRIVATE "-DSMP_DISABLE_LEGACY_API"
